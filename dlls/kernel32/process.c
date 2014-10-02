@@ -65,6 +65,7 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(process);
 WINE_DECLARE_DEBUG_CHANNEL(relay);
+WINE_DECLARE_DEBUG_CHANNEL(winediag);
 
 #ifdef __APPLE__
 extern char **__wine_get_main_environment(void);
@@ -1254,6 +1255,15 @@ void WINAPI start_process( LPTHREAD_START_ROUTINE entry, PEB *peb )
 
     __TRY
     {
+        if (CreateEventA(0, 0, 0, "__winestaging_warn_event") && GetLastError() != ERROR_ALREADY_EXISTS)
+        {
+            FIXME_(winediag)("This Wine version %s is a testing version containing experimental patches.\n", wine_get_version());
+            FIXME_(winediag)("Do not report bugs to winehq.org or Valve Corp.\n");
+        }
+        else
+            WARN_(winediag)("This Wine version %s is a testing version containing experimental patches.\n", wine_get_version());
+
+
         if (!CheckRemoteDebuggerPresent( GetCurrentProcess(), &being_debugged ))
             being_debugged = FALSE;
 
@@ -3888,10 +3898,10 @@ BOOL WINAPI GetProcessShutdownParameters( LPDWORD lpdwLevel, LPDWORD lpdwFlags )
 BOOL WINAPI GetProcessPriorityBoost(HANDLE hprocess,PBOOL pDisablePriorityBoost)
 {
     FIXME("(%p,%p): semi-stub\n", hprocess, pDisablePriorityBoost);
-    
+
     /* Report that no boost is present.. */
     *pDisablePriorityBoost = FALSE;
-    
+
     return TRUE;
 }
 
@@ -3949,7 +3959,7 @@ BOOL WINAPI GetProcessIoCounters(HANDLE hProcess, PIO_COUNTERS ioc)
 {
     NTSTATUS    status;
 
-    status = NtQueryInformationProcess(hProcess, ProcessIoCounters, 
+    status = NtQueryInformationProcess(hProcess, ProcessIoCounters,
                                        ioc, sizeof(*ioc), NULL);
     if (status) SetLastError( RtlNtStatusToDosError(status) );
     return !status;
@@ -4340,7 +4350,7 @@ BOOL WINAPI GetLogicalProcessorInformationEx(LOGICAL_PROCESSOR_RELATIONSHIP rela
  * Notifies the system that a batch file has started or finished.
  *
  * PARAMS
- *  bBatchRunning [I]  TRUE if a batch file has started or 
+ *  bBatchRunning [I]  TRUE if a batch file has started or
  *                     FALSE if a batch file has finished executing.
  *
  * RETURNS
