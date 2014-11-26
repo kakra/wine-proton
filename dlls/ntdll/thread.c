@@ -350,6 +350,26 @@ static ULONG_PTR get_image_addr(void)
 }
 #endif
 
+
+/**************************************************************************
+ *  __wine_user_shared_data   (NTDLL.@)
+ *
+ * Update user shared data and return the address of the structure.
+ */
+BYTE* CDECL __wine_user_shared_data(void)
+{
+    LARGE_INTEGER now;
+    NtQuerySystemTime( &now );
+    user_shared_data->SystemTime.LowPart = now.u.LowPart;
+    user_shared_data->SystemTime.High1Time = user_shared_data->SystemTime.High2Time = now.u.HighPart;
+    user_shared_data->u.TickCountQuad = (now.QuadPart - server_start_time) / 10000;
+    user_shared_data->u.TickCount.High2Time = user_shared_data->u.TickCount.High1Time;
+    user_shared_data->TickCountLowDeprecated = user_shared_data->u.TickCount.LowPart;
+    user_shared_data->TickCountMultiplier = 1 << 24;
+    return (BYTE *)user_shared_data;
+}
+
+
 /***********************************************************************
  *           thread_init
  *
@@ -363,7 +383,6 @@ void thread_init(void)
     void *addr;
     BOOL suspend;
     SIZE_T size, info_size;
-    LARGE_INTEGER now;
     NTSTATUS status;
     struct ntdll_thread_data *thread_data;
     static struct debug_info debug_info;  /* debug info for initial thread */
@@ -477,15 +496,8 @@ void thread_init(void)
             wine_server_fd_to_handle( 2, GENERIC_WRITE|SYNCHRONIZE, OBJ_INHERIT, &params.hStdError );
     }
 
-    /* initialize time values in user_shared_data */
-    NtQuerySystemTime( &now );
-    user_shared_data->SystemTime.LowPart = now.u.LowPart;
-    user_shared_data->SystemTime.High1Time = user_shared_data->SystemTime.High2Time = now.u.HighPart;
-    user_shared_data->u.TickCountQuad = (now.QuadPart - server_start_time) / 10000;
-    user_shared_data->u.TickCount.High2Time = user_shared_data->u.TickCount.High1Time;
-    user_shared_data->TickCountLowDeprecated = user_shared_data->u.TickCount.LowPart;
-    user_shared_data->TickCountMultiplier = 1 << 24;
-
+    /* initialize user_shared_data */
+    __wine_user_shared_data();
     fill_cpu_info();
 
     esync_init();
