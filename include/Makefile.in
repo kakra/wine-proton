@@ -76,6 +76,7 @@ SOURCES = \
 	cryptuiapi.h \
 	ctfutb.idl \
 	ctxtcall.idl \
+	cuda.h \
 	custcntl.h \
 	cvconst.h \
 	d2d1.idl \
