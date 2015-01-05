@@ -482,6 +482,7 @@ SOURCES = \
 	ntsecapi.h \
 	ntsecpkg.h \
 	ntstatus.h \
+	nvapi.h \
 	oaidl.idl \
 	objbase.h \
 	objectarray.idl \
