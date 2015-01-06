@@ -78,6 +78,7 @@ SOURCES = \
 	ctxtcall.idl \
 	cuda.h \
 	custcntl.h \
+	cuviddec.h \
 	cvconst.h \
 	d2d1.idl \
 	d2d1_1.idl \
@@ -483,6 +484,7 @@ SOURCES = \
 	ntsecpkg.h \
 	ntstatus.h \
 	nvapi.h \
+	nvcuvid.h \
 	oaidl.idl \
 	objbase.h \
 	objectarray.idl \
