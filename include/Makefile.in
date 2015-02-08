@@ -485,6 +485,7 @@ SOURCES = \
 	ntstatus.h \
 	nvapi.h \
 	nvcuvid.h \
+	nvencodeapi.h \
 	oaidl.idl \
 	objbase.h \
 	objectarray.idl \
