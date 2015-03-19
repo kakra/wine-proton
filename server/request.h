@@ -159,6 +159,7 @@ DECL_HANDLER(alloc_file_handle);
 DECL_HANDLER(get_handle_unix_name);
 DECL_HANDLER(get_handle_fd);
 DECL_HANDLER(get_directory_cache_entry);
+DECL_HANDLER(get_shared_memory);
 DECL_HANDLER(flush);
 DECL_HANDLER(get_file_info);
 DECL_HANDLER(get_volume_info);
@@ -455,6 +456,7 @@ static const req_handler req_handlers[REQ_NB_REQUESTS] =
     (req_handler)req_get_handle_unix_name,
     (req_handler)req_get_handle_fd,
     (req_handler)req_get_directory_cache_entry,
+    (req_handler)req_get_shared_memory,
     (req_handler)req_flush,
     (req_handler)req_get_file_info,
     (req_handler)req_get_volume_info,
@@ -1032,6 +1034,8 @@ C_ASSERT( FIELD_OFFSET(struct get_directory_cache_entry_request, handle) == 12 )
 C_ASSERT( sizeof(struct get_directory_cache_entry_request) == 16 );
 C_ASSERT( FIELD_OFFSET(struct get_directory_cache_entry_reply, entry) == 8 );
 C_ASSERT( sizeof(struct get_directory_cache_entry_reply) == 16 );
+C_ASSERT( FIELD_OFFSET(struct get_shared_memory_request, tid) == 12 );
+C_ASSERT( sizeof(struct get_shared_memory_request) == 16 );
 C_ASSERT( FIELD_OFFSET(struct flush_request, async) == 16 );
 C_ASSERT( sizeof(struct flush_request) == 56 );
 C_ASSERT( FIELD_OFFSET(struct flush_reply, event) == 8 );

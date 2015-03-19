@@ -1811,6 +1811,11 @@ static void dump_get_directory_cache_entry_reply( const struct get_directory_cac
     dump_varargs_ints( ", free=", cur_size );
 }
 
+static void dump_get_shared_memory_request( const struct get_shared_memory_request *req )
+{
+    fprintf( stderr, " tid=%04x", req->tid );
+}
+
 static void dump_flush_request( const struct flush_request *req )
 {
     dump_async_data( " async=", &req->async );
@@ -4593,6 +4598,7 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_get_handle_unix_name_request,
     (dump_func)dump_get_handle_fd_request,
     (dump_func)dump_get_directory_cache_entry_request,
+    (dump_func)dump_get_shared_memory_request,
     (dump_func)dump_flush_request,
     (dump_func)dump_get_file_info_request,
     (dump_func)dump_get_volume_info_request,
@@ -4886,6 +4892,7 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_get_handle_unix_name_reply,
     (dump_func)dump_get_handle_fd_reply,
     (dump_func)dump_get_directory_cache_entry_reply,
+    NULL,
     (dump_func)dump_flush_reply,
     (dump_func)dump_get_file_info_reply,
     (dump_func)dump_get_volume_info_reply,
@@ -5179,6 +5186,7 @@ static const char * const req_names[REQ_NB_REQUESTS] = {
     "get_handle_unix_name",
     "get_handle_fd",
     "get_directory_cache_entry",
+    "get_shared_memory",
     "flush",
     "get_file_info",
     "get_volume_info",

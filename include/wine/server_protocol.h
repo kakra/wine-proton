@@ -53,6 +53,15 @@ struct request_max_size
 #define FIRST_USER_HANDLE 0x0020
 #define LAST_USER_HANDLE  0xffef
 
+typedef struct
+{
+    int dummy;
+} shmglobal_t;
+
+typedef struct
+{
+    int dummy;
+} shmlocal_t;
 
 
 typedef union
@@ -1527,6 +1536,18 @@ struct get_directory_cache_entry_reply
     int          entry;
     /* VARARG(free,ints); */
     char __pad_12[4];
+};
+
+
+
+struct get_shared_memory_request
+{
+    struct request_header __header;
+    thread_id_t tid;
+};
+struct get_shared_memory_reply
+{
+    struct reply_header __header;
 };
 
 
@@ -5698,6 +5719,7 @@ enum request
     REQ_get_handle_unix_name,
     REQ_get_handle_fd,
     REQ_get_directory_cache_entry,
+    REQ_get_shared_memory,
     REQ_flush,
     REQ_get_file_info,
     REQ_get_volume_info,
@@ -5995,6 +6017,7 @@ union generic_request
     struct get_handle_unix_name_request get_handle_unix_name_request;
     struct get_handle_fd_request get_handle_fd_request;
     struct get_directory_cache_entry_request get_directory_cache_entry_request;
+    struct get_shared_memory_request get_shared_memory_request;
     struct flush_request flush_request;
     struct get_file_info_request get_file_info_request;
     struct get_volume_info_request get_volume_info_request;
@@ -6290,6 +6313,7 @@ union generic_reply
     struct get_handle_unix_name_reply get_handle_unix_name_reply;
     struct get_handle_fd_reply get_handle_fd_reply;
     struct get_directory_cache_entry_reply get_directory_cache_entry_reply;
+    struct get_shared_memory_reply get_shared_memory_reply;
     struct flush_reply flush_reply;
     struct get_file_info_reply get_file_info_reply;
     struct get_volume_info_reply get_volume_info_reply;
@@ -6535,6 +6559,6 @@ union generic_reply
     struct terminate_job_reply terminate_job_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 559
+#define SERVER_PROTOCOL_VERSION 567
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */
