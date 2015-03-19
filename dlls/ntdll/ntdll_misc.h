@@ -107,6 +107,7 @@ extern NTSTATUS alloc_object_attributes( const OBJECT_ATTRIBUTES *attr, struct o
 extern NTSTATUS validate_open_object_attributes( const OBJECT_ATTRIBUTES *attr ) DECLSPEC_HIDDEN;
 extern int wait_select_reply( void *cookie ) DECLSPEC_HIDDEN;
 extern BOOL invoke_apc( const apc_call_t *call, apc_result_t *result, sigset_t *user_sigset ) DECLSPEC_HIDDEN;
+extern void *server_get_shared_memory( HANDLE thread ) DECLSPEC_HIDDEN;
 
 /* module handling */
 extern LIST_ENTRY tls_links DECLSPEC_HIDDEN;
