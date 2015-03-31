@@ -167,4 +167,9 @@ extern void set_scheduler_priority( struct thread *thread );
 extern void init_scheduler( void );
 extern void set_scheduler_priority( struct thread *thread );
 
+/* scheduler functions */
+
+extern void init_scheduler( void );
+extern void set_scheduler_priority( struct thread *thread );
+
 #endif  /* __WINE_SERVER_THREAD_H */
