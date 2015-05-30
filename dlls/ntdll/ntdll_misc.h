@@ -262,6 +262,11 @@ extern SYSTEM_CPU_INFORMATION cpu_info DECLSPEC_HIDDEN;
 NTSTATUS WINAPI RtlHashUnicodeString(PCUNICODE_STRING,BOOLEAN,ULONG,ULONG*);
 void     WINAPI LdrInitializeThunk(CONTEXT*,void**,ULONG_PTR,ULONG_PTR);
 
+/* version */
+extern const char * CDECL NTDLL_wine_get_version(void);
+extern const char * CDECL NTDLL_wine_get_build_id(void);
+extern void CDECL NTDLL_wine_get_host_version( const char **sysname, const char **release );
+
 /* process / thread time */
 extern BOOL read_process_time(int unix_pid, int unix_tid, unsigned long clk_tck,
                               LARGE_INTEGER *kernel, LARGE_INTEGER *user) DECLSPEC_HIDDEN;
