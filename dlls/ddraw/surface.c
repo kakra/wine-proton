@@ -226,7 +226,7 @@ static HRESULT WINAPI ddraw_surface7_QueryInterface(IDirectDrawSurface7 *iface, 
             {
                 HRESULT hr;
 
-                if (FAILED(hr = d3d_device_create(This->ddraw, This, (IUnknown *)&This->IDirectDrawSurface_iface,
+                if (FAILED(hr = d3d_device_create(This->ddraw, riid, This, (IUnknown *)&This->IDirectDrawSurface_iface,
                         1, &This->device1, (IUnknown *)&This->IDirectDrawSurface_iface)))
                 {
                     This->device1 = NULL;
@@ -6162,7 +6162,39 @@ HRESULT ddraw_surface_create(struct ddraw *ddraw, const DDSURFACEDESC2 *surface_
 
     if (desc->ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY)
     {
-        wined3d_desc.access = WINED3D_RESOURCE_ACCESS_CPU
+        unsigned int bind_flags = 0;
+
+        if (desc->ddsCaps.dwCaps2 & DDSCAPS2_CUBEMAP)
+        {
+            bind_flags |= WINED3D_BIND_SHADER_RESOURCE;
+        }
+        else if (desc->ddsCaps.dwCaps & DDSCAPS_TEXTURE)
+        {
+            bind_flags |= WINED3D_BIND_SHADER_RESOURCE;
+        }
+
+        if (desc->ddsCaps.dwCaps & DDSCAPS_ZBUFFER)
+            bind_flags |= WINED3D_BIND_DEPTH_STENCIL;
+        else if (desc->ddsCaps.dwCaps & DDSCAPS_3DDEVICE)
+            bind_flags |= WINED3D_BIND_RENDER_TARGET;
+        /*
+         * The ddraw RGB device allows to use system memory surfaces as rendering target.
+         * This does not cause problems because the RGB device does software rasterization
+         * though it will fail with hardware accelerated ddraw. In order to be partially
+         * compatible with games requesting explicitly the RGB device, we ignore the
+         * specified location and try to create rendering targets in video memory if
+         * possible.
+         */
+        if ((desc->ddsCaps.dwCaps & DDSCAPS_3DDEVICE) &&
+            SUCCEEDED(hr = wined3d_check_device_format(ddraw->wined3d, WINED3DADAPTER_DEFAULT,
+                        WINED3D_DEVICE_TYPE_HAL, mode.format_id, 0,
+                        bind_flags, WINED3D_RTYPE_TEXTURE_2D, wined3d_desc.format)))
+        {
+            FIXME("Application wants to create rendering target in system memory, using video memory instead\n");
+            wined3d_desc.bind_flags = bind_flags;
+        }
+        else
+            wined3d_desc.access = WINED3D_RESOURCE_ACCESS_CPU
                 | WINED3D_RESOURCE_ACCESS_MAP_R | WINED3D_RESOURCE_ACCESS_MAP_W;
     }
     else
