@@ -110,6 +110,9 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(font);
 
+static RTL_RUN_ONCE init_once = RTL_RUN_ONCE_INIT;
+static DWORD WINAPI freetype_lazy_init(RTL_RUN_ONCE *once, void *param, void **context);
+
 #ifdef HAVE_FREETYPE
 
 #ifndef HAVE_FT_TRUETYPEENGINETYPE
@@ -3266,6 +3269,7 @@ INT WineEngAddFontResourceEx(LPCWSTR file, DWORD flags, PVOID pdv)
 {
     INT ret = 0;
 
+    RtlRunOnceExecuteOnce( &init_once, freetype_lazy_init, NULL, NULL );
     GDI_CheckNotLock();
 
     if (ft_handle)  /* do it only if we have freetype up and running */
@@ -3308,6 +3312,7 @@ INT WineEngAddFontResourceEx(LPCWSTR file, DWORD flags, PVOID pdv)
  */
 HANDLE WineEngAddFontMemResourceEx(PVOID pbFont, DWORD cbFont, PVOID pdv, DWORD *pcFonts)
 {
+    RtlRunOnceExecuteOnce( &init_once, freetype_lazy_init, NULL, NULL );
     GDI_CheckNotLock();
 
     if (ft_handle)  /* do it only if we have freetype up and running */
@@ -3346,6 +3351,7 @@ BOOL WineEngRemoveFontResourceEx(LPCWSTR file, DWORD flags, PVOID pdv)
 {
     INT ret = 0;
 
+    RtlRunOnceExecuteOnce( &init_once, freetype_lazy_init, NULL, NULL );
     GDI_CheckNotLock();
 
     if (ft_handle)  /* do it only if we have freetype up and running */
@@ -3667,10 +3673,13 @@ static BOOL create_fot( const WCHAR *resource, const WCHAR *font_file, const str
 BOOL WineEngCreateScalableFontResource( DWORD hidden, LPCWSTR resource,
                                         LPCWSTR font_file, LPCWSTR font_path )
 {
-    char *unix_name = get_ttf_file_name( font_file, font_path );
+    char *unix_name;
     struct fontdir fontdir;
     BOOL ret = FALSE;
 
+    RtlRunOnceExecuteOnce( &init_once, freetype_lazy_init, NULL, NULL );
+
+    unix_name = get_ttf_file_name( font_file, font_path );
     if (!unix_name || !get_fontdir( unix_name, &fontdir ))
         SetLastError( ERROR_INVALID_PARAMETER );
     else
@@ -4184,8 +4193,6 @@ static BOOL init_freetype(void)
         FT_UInt interpreter_version = 35;
         pFT_Property_Set( library, "truetype", "interpreter-version", &interpreter_version );
     }
-
-    font_driver = &freetype_funcs;
     return TRUE;
 
 sym_not_found:
@@ -4371,21 +4378,13 @@ static void reorder_font_list(void)
     default_sans = set_default( default_sans_list );
 }
 
-/*************************************************************
- *    WineEngInit
- *
- * Initialize FreeType library and create a list of available faces
- */
-BOOL WineEngInit(void)
+static DWORD WINAPI freetype_lazy_init(RTL_RUN_ONCE *once, void *param, void **context)
 {
     HKEY hkey;
     DWORD disposition;
     HANDLE font_mutex;
 
-    /* update locale dependent font info in registry */
-    update_font_info();
-
-    if(!init_freetype()) return FALSE;
+    if(!init_freetype()) return TRUE;
 
 #ifdef SONAME_LIBFONTCONFIG
     init_fontconfig();
@@ -4411,7 +4410,7 @@ BOOL WineEngInit(void)
     if((font_mutex = CreateMutexW(NULL, FALSE, font_mutex_nameW)) == NULL)
     {
         ERR("Failed to create font mutex\n");
-        return FALSE;
+        return TRUE;
     }
     WaitForSingleObject(font_mutex, INFINITE);
 
@@ -4435,6 +4434,21 @@ BOOL WineEngInit(void)
     init_system_links();
     
     ReleaseMutex(font_mutex);
+    return TRUE;
+}
+
+/*************************************************************
+ *    WineEngInit
+ *
+ * Initialize FreeType library and create a list of available faces
+ */
+BOOL WineEngInit(void)
+{
+    /* update locale dependent font info in registry */
+    update_font_info();
+
+    /* The rest will be initialized later in freetype_lazy_init */
+    font_driver = &freetype_funcs;
     return TRUE;
 }
 
@@ -5180,8 +5194,12 @@ static BOOL select_charmap(FT_Face ft_face, FT_Encoding encoding)
 static BOOL freetype_CreateDC( PHYSDEV *dev, LPCWSTR driver, LPCWSTR device,
                                LPCWSTR output, const DEVMODEW *devmode )
 {
-    struct freetype_physdev *physdev = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*physdev) );
+    struct freetype_physdev *physdev;
 
+    RtlRunOnceExecuteOnce( &init_once, freetype_lazy_init, NULL, NULL );
+    if (!ft_handle) return FALSE;
+
+    physdev = HeapAlloc( GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*physdev) );
     if (!physdev) return FALSE;
     push_dc_driver( dev, &physdev->dev, &freetype_funcs );
     return TRUE;
@@ -8718,6 +8736,7 @@ static BOOL freetype_FontIsLinked( PHYSDEV dev )
  */
 BOOL WINAPI GetRasterizerCaps( LPRASTERIZER_STATUS lprs, UINT cbNumBytes)
 {
+    /* RtlRunOnceExecuteOnce( &init_once, freetype_lazy_init, NULL, NULL ); */
     lprs->nSize = sizeof(RASTERIZER_STATUS);
     lprs->wFlags = TT_AVAILABLE | TT_ENABLED;
     lprs->nLanguageID = 0;
