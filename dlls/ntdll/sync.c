@@ -2094,7 +2094,7 @@ NTSTATUS WINAPI RtlWaitOnAddress( const void *addr, const void *cmp, SIZE_T size
 
         if (ret == STATUS_PENDING) ret = wait_select_reply( &cookie );
         if (ret != STATUS_USER_APC) break;
-        if (invoke_apc( &call, &result ))
+        if (invoke_apc( &call, &result, NULL ))
         {
             /* if we ran a user apc we have to check once more if additional apcs are queued,
              * but we don't want to wait */
