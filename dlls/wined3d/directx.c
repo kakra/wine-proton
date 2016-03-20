@@ -586,11 +586,13 @@ void wined3d_driver_info_init(struct wined3d_driver_info *driver_info,
      * In order to avoid this application bug we limit the amount of video memory
      * to LONG_MAX for older Windows versions.
      */
+#ifdef __i386__
     if (driver_model < DRIVER_MODEL_NT6X && driver_info->vram_bytes > LONG_MAX)
     {
         TRACE("Limiting amount of video memory to %#lx bytes for OS version older than Vista.\n", LONG_MAX);
         driver_info->vram_bytes = LONG_MAX;
     }
+#endif
 
     driver_info->sysmem_bytes = 64 * 1024 * 1024;
     memory_status.dwLength = sizeof(memory_status);
