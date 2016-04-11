@@ -55,8 +55,8 @@
 @ stub TransformPattern_Rotate
 @ stub UiaAddEvent
 @ stdcall UiaClientsAreListening()
-#@ stub UiaDisconnectAllProviders
-#@ stub UiaDisconnectProvider
+@ stub UiaDisconnectAllProviders
+@ stub UiaDisconnectProvider
 @ stub UiaEventAddWindow
 @ stub UiaEventRemoveWindow
 @ stub UiaFind
@@ -73,7 +73,7 @@
 @ stub UiaHUiaNodeFromVariant
 @ stub UiaHasServerSideProvider
 @ stdcall UiaHostProviderFromHwnd(long ptr)
-#@ stub UiaIAccessibleFromProvider
+@ stub UiaIAccessibleFromProvider
 @ stdcall UiaLookupId(long ptr)
 @ stub UiaNavigate
 @ stub UiaNodeFromFocus
@@ -82,15 +82,15 @@
 @ stub UiaNodeFromProvider
 @ stub UiaNodeRelease
 @ stub UiaPatternRelease
-#@ stub UiaProviderForNonClient
-#@ stub UiaProviderFromIAccessible
+@ stub UiaProviderForNonClient
+@ stub UiaProviderFromIAccessible
 @ stub UiaRaiseAsyncContentLoadedEvent
 @ stdcall UiaRaiseAutomationEvent(ptr long)
 @ stub UiaRaiseAutomationPropertyChangedEvent
 #@ stub UiaRaiseChangesEvent
 #@ stub UiaRaiseNotificationEvent
 @ stub UiaRaiseStructureChangedEvent
-#@ stub UiaRaiseTextEditTextChangedEvent
+@ stub UiaRaiseTextEditTextChangedEvent
 @ stub UiaRegisterProviderCallback
 @ stub UiaRemoveEvent
 @ stdcall UiaReturnRawElementProvider(long long long ptr)
