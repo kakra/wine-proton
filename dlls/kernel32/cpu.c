@@ -312,7 +312,9 @@ SIZE_T WINAPI GetLargePageMinimum(void)
  */
 WORD WINAPI GetActiveProcessorGroupCount(void)
 {
-    FIXME("semi-stub, always returning 1\n");
+    TRACE("()\n");
+
+    /* systems with less than 64 logical processors only have group 0 */
     return 1;
 }
 
@@ -321,14 +323,26 @@ WORD WINAPI GetActiveProcessorGroupCount(void)
  */
 DWORD WINAPI GetActiveProcessorCount(WORD group)
 {
-    SYSTEM_INFO si;
-    DWORD cpus;
+    TRACE("(%u)\n", group);
 
-    GetSystemInfo( &si );
-    cpus = si.dwNumberOfProcessors;
+    if (group && group != ALL_PROCESSOR_GROUPS)
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return 0;
+    }
 
-    FIXME("semi-stub, returning %u\n", cpus);
-    return cpus;
+    return system_info.NumberOfProcessors;
+}
+
+/***********************************************************************
+ *           GetMaximumProcessorGroupCount (KERNEL32.@)
+ */
+WORD WINAPI GetMaximumProcessorGroupCount(void)
+{
+    TRACE("()\n");
+
+    /* systems with less than 64 logical processors only have group 0 */
+    return 1;
 }
 
 /***********************************************************************
