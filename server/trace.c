@@ -4551,6 +4551,17 @@ static void dump_terminate_job_request( const struct terminate_job_request *req 
     fprintf( stderr, ", status=%d", req->status );
 }
 
+static void dump_get_system_info_request( const struct get_system_info_request *req )
+{
+}
+
+static void dump_get_system_info_reply( const struct get_system_info_reply *req )
+{
+    fprintf( stderr, " processes=%08x", req->processes );
+    fprintf( stderr, ", threads=%08x", req->threads );
+    fprintf( stderr, ", handles=%08x", req->handles );
+}
+
 static void dump_create_esync_request( const struct create_esync_request *req )
 {
     fprintf( stderr, " access=%08x", req->access );
@@ -4896,6 +4907,7 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_set_job_limits_request,
     (dump_func)dump_set_job_completion_port_request,
     (dump_func)dump_terminate_job_request,
+    (dump_func)dump_get_system_info_request,
     (dump_func)dump_create_esync_request,
     (dump_func)dump_open_esync_request,
     (dump_func)dump_get_esync_fd_request,
@@ -5196,6 +5208,7 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
     NULL,
     NULL,
     NULL,
+    (dump_func)dump_get_system_info_reply,
     (dump_func)dump_create_esync_reply,
     (dump_func)dump_open_esync_reply,
     (dump_func)dump_get_esync_fd_reply,
@@ -5496,6 +5509,7 @@ static const char * const req_names[REQ_NB_REQUESTS] = {
     "set_job_limits",
     "set_job_completion_port",
     "terminate_job",
+    "get_system_info",
     "create_esync",
     "open_esync",
     "get_esync_fd",
