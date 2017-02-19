@@ -53,6 +53,18 @@ struct request_max_size
 #define FIRST_USER_HANDLE 0x0020
 #define LAST_USER_HANDLE  0xffef
 
+typedef struct
+{
+    unsigned int last_input_time;
+} shmglobal_t;
+
+typedef struct
+{
+    int             queue_bits;
+    user_handle_t   input_focus;
+    user_handle_t   input_capture;
+    user_handle_t   input_active;
+} shmlocal_t;
 
 
 typedef union
@@ -983,6 +995,8 @@ struct get_thread_times_reply
     struct reply_header __header;
     timeout_t    creation_time;
     timeout_t    exit_time;
+    int          unix_pid;
+    int          unix_tid;
 };
 
 
@@ -1546,6 +1560,18 @@ struct get_directory_cache_entry_reply
     int          entry;
     /* VARARG(free,ints); */
     char __pad_12[4];
+};
+
+
+
+struct get_shared_memory_request
+{
+    struct request_header __header;
+    thread_id_t tid;
+};
+struct get_shared_memory_reply
+{
+    struct reply_header __header;
 };
 
 
@@ -2406,8 +2432,9 @@ struct next_process_reply
     int          priority;
     int          handles;
     int          unix_pid;
-    /* VARARG(filename,unicode_str); */
     char __pad_36[4];
+    timeout_t    start_time;
+    /* VARARG(filename,unicode_str); */
 };
 
 
@@ -2425,9 +2452,12 @@ struct next_thread_reply
     int          count;
     process_id_t pid;
     thread_id_t  tid;
+    char __pad_20[4];
+    timeout_t    creation_time;
     int          base_pri;
     int          delta_pri;
-    char __pad_28[4];
+    int          unix_tid;
+    char __pad_44[4];
 };
 
 
@@ -5665,6 +5695,21 @@ struct terminate_job_reply
 };
 
 
+struct get_system_info_request
+{
+    struct request_header __header;
+    char __pad_12[4];
+};
+struct get_system_info_reply
+{
+    struct reply_header __header;
+    unsigned int processes;
+    unsigned int threads;
+    unsigned int handles;
+    char __pad_20[4];
+};
+
+
 struct create_esync_request
 {
     struct request_header __header;
@@ -5801,6 +5846,7 @@ enum request
     REQ_get_handle_unix_name,
     REQ_get_handle_fd,
     REQ_get_directory_cache_entry,
+    REQ_get_shared_memory,
     REQ_flush,
     REQ_get_file_info,
     REQ_get_volume_info,
@@ -6044,6 +6090,7 @@ enum request
     REQ_set_job_limits,
     REQ_set_job_completion_port,
     REQ_terminate_job,
+    REQ_get_system_info,
     REQ_create_esync,
     REQ_open_esync,
     REQ_get_esync_fd,
@@ -6104,6 +6151,7 @@ union generic_request
     struct get_handle_unix_name_request get_handle_unix_name_request;
     struct get_handle_fd_request get_handle_fd_request;
     struct get_directory_cache_entry_request get_directory_cache_entry_request;
+    struct get_shared_memory_request get_shared_memory_request;
     struct flush_request flush_request;
     struct get_file_info_request get_file_info_request;
     struct get_volume_info_request get_volume_info_request;
@@ -6347,6 +6395,7 @@ union generic_request
     struct set_job_limits_request set_job_limits_request;
     struct set_job_completion_port_request set_job_completion_port_request;
     struct terminate_job_request terminate_job_request;
+    struct get_system_info_request get_system_info_request;
     struct create_esync_request create_esync_request;
     struct open_esync_request open_esync_request;
     struct get_esync_fd_request get_esync_fd_request;
@@ -6405,6 +6454,7 @@ union generic_reply
     struct get_handle_unix_name_reply get_handle_unix_name_reply;
     struct get_handle_fd_reply get_handle_fd_reply;
     struct get_directory_cache_entry_reply get_directory_cache_entry_reply;
+    struct get_shared_memory_reply get_shared_memory_reply;
     struct flush_reply flush_reply;
     struct get_file_info_reply get_file_info_reply;
     struct get_volume_info_reply get_volume_info_reply;
@@ -6648,6 +6698,7 @@ union generic_reply
     struct set_job_limits_reply set_job_limits_reply;
     struct set_job_completion_port_reply set_job_completion_port_reply;
     struct terminate_job_reply terminate_job_reply;
+    struct get_system_info_reply get_system_info_reply;
     struct create_esync_reply create_esync_reply;
     struct open_esync_reply open_esync_reply;
     struct get_esync_fd_reply get_esync_fd_reply;
@@ -6655,6 +6706,6 @@ union generic_reply
     struct esync_msgwait_reply esync_msgwait_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 577
+#define SERVER_PROTOCOL_VERSION 578
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */
