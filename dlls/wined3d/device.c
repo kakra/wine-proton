@@ -1219,6 +1219,7 @@ HRESULT CDECL wined3d_device_uninit_3d(struct wined3d_device *device)
 
     wine_rb_clear(&device->samplers, device_free_sampler, NULL);
 
+    context_set_current(NULL);
     wined3d_device_delete_opengl_contexts(device);
 
     if (device->fb.depth_stencil)
