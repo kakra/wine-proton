@@ -5694,6 +5694,21 @@ struct terminate_job_reply
 };
 
 
+struct get_system_info_request
+{
+    struct request_header __header;
+    char __pad_12[4];
+};
+struct get_system_info_reply
+{
+    struct reply_header __header;
+    unsigned int processes;
+    unsigned int threads;
+    unsigned int handles;
+    char __pad_20[4];
+};
+
+
 struct create_esync_request
 {
     struct request_header __header;
@@ -6074,6 +6089,7 @@ enum request
     REQ_set_job_limits,
     REQ_set_job_completion_port,
     REQ_terminate_job,
+    REQ_get_system_info,
     REQ_create_esync,
     REQ_open_esync,
     REQ_get_esync_fd,
@@ -6378,6 +6394,7 @@ union generic_request
     struct set_job_limits_request set_job_limits_request;
     struct set_job_completion_port_request set_job_completion_port_request;
     struct terminate_job_request terminate_job_request;
+    struct get_system_info_request get_system_info_request;
     struct create_esync_request create_esync_request;
     struct open_esync_request open_esync_request;
     struct get_esync_fd_request get_esync_fd_request;
@@ -6680,6 +6697,7 @@ union generic_reply
     struct set_job_limits_reply set_job_limits_reply;
     struct set_job_completion_port_reply set_job_completion_port_reply;
     struct terminate_job_reply terminate_job_reply;
+    struct get_system_info_reply get_system_info_reply;
     struct create_esync_reply create_esync_reply;
     struct open_esync_reply open_esync_reply;
     struct get_esync_fd_reply get_esync_fd_reply;
@@ -6687,6 +6705,6 @@ union generic_reply
     struct esync_msgwait_reply esync_msgwait_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 579
+#define SERVER_PROTOCOL_VERSION 580
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */
