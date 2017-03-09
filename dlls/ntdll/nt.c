@@ -2354,6 +2354,7 @@ NTSTATUS WINAPI NtQuerySystemInformation(
         {
             SYSTEM_PROCESS_INFORMATION* spi = SystemInformation;
             SYSTEM_PROCESS_INFORMATION* last = NULL;
+            unsigned long clk_tck = sysconf(_SC_CLK_TCK);
             HANDLE hSnap = 0;
             WCHAR procname[1024];
             WCHAR* exename;
@@ -2391,7 +2392,7 @@ NTSTATUS WINAPI NtQuerySystemInformation(
 
                         if (Length >= len + procstructlen)
                         {
-                            /* ftCreationTime, ftUserTime, ftKernelTime;
+                            /* ftCreationTime;
                              * vmCounters, ioCounters
                              */
  
@@ -2409,6 +2410,9 @@ NTSTATUS WINAPI NtQuerySystemInformation(
 
                             /* spi->ti will be set later on */
 
+                            if (reply->unix_pid != -1)
+                                read_process_time(reply->unix_pid, -1, clk_tck,
+                                                  &spi->KernelTime, &spi->UserTime);
                         }
                         len += procstructlen;
                     }
