@@ -1410,6 +1410,8 @@ static void dump_get_thread_times_reply( const struct get_thread_times_reply *re
 {
     dump_timeout( " creation_time=", &req->creation_time );
     dump_timeout( ", exit_time=", &req->exit_time );
+    fprintf( stderr, ", unix_pid=%d", req->unix_pid );
+    fprintf( stderr, ", unix_tid=%d", req->unix_tid );
 }
 
 static void dump_set_thread_info_request( const struct set_thread_info_request *req )
@@ -2352,6 +2354,7 @@ static void dump_next_process_reply( const struct next_process_reply *req )
     fprintf( stderr, ", priority=%d", req->priority );
     fprintf( stderr, ", handles=%d", req->handles );
     fprintf( stderr, ", unix_pid=%d", req->unix_pid );
+    dump_timeout( ", start_time=", &req->start_time );
     dump_varargs_unicode_str( ", filename=", cur_size );
 }
 
@@ -2366,6 +2369,7 @@ static void dump_next_thread_reply( const struct next_thread_reply *req )
     fprintf( stderr, " count=%d", req->count );
     fprintf( stderr, ", pid=%04x", req->pid );
     fprintf( stderr, ", tid=%04x", req->tid );
+    dump_timeout( ", creation_time=", &req->creation_time );
     fprintf( stderr, ", base_pri=%d", req->base_pri );
     fprintf( stderr, ", delta_pri=%d", req->delta_pri );
 }
