@@ -2436,6 +2436,8 @@ struct next_thread_reply
     timeout_t    creation_time;
     int          base_pri;
     int          delta_pri;
+    int          unix_tid;
+    char __pad_44[4];
 };
 
 
@@ -6666,6 +6668,6 @@ union generic_reply
     struct esync_msgwait_reply esync_msgwait_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 579
+#define SERVER_PROTOCOL_VERSION 580
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */
