@@ -2440,6 +2440,8 @@ struct next_thread_reply
     timeout_t    creation_time;
     int          base_pri;
     int          delta_pri;
+    int          unix_tid;
+    char __pad_44[4];
 };
 
 
@@ -6569,6 +6571,6 @@ union generic_reply
     struct terminate_job_reply terminate_job_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 568
+#define SERVER_PROTOCOL_VERSION 569
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */
