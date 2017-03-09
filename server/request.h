@@ -160,6 +160,7 @@ DECL_HANDLER(alloc_file_handle);
 DECL_HANDLER(get_handle_unix_name);
 DECL_HANDLER(get_handle_fd);
 DECL_HANDLER(get_directory_cache_entry);
+DECL_HANDLER(get_shared_memory);
 DECL_HANDLER(flush);
 DECL_HANDLER(get_file_info);
 DECL_HANDLER(get_volume_info);
@@ -462,6 +463,7 @@ static const req_handler req_handlers[REQ_NB_REQUESTS] =
     (req_handler)req_get_handle_unix_name,
     (req_handler)req_get_handle_fd,
     (req_handler)req_get_directory_cache_entry,
+    (req_handler)req_get_shared_memory,
     (req_handler)req_flush,
     (req_handler)req_get_file_info,
     (req_handler)req_get_volume_info,
@@ -853,7 +855,9 @@ C_ASSERT( FIELD_OFFSET(struct get_thread_times_request, handle) == 12 );
 C_ASSERT( sizeof(struct get_thread_times_request) == 16 );
 C_ASSERT( FIELD_OFFSET(struct get_thread_times_reply, creation_time) == 8 );
 C_ASSERT( FIELD_OFFSET(struct get_thread_times_reply, exit_time) == 16 );
-C_ASSERT( sizeof(struct get_thread_times_reply) == 24 );
+C_ASSERT( FIELD_OFFSET(struct get_thread_times_reply, unix_pid) == 24 );
+C_ASSERT( FIELD_OFFSET(struct get_thread_times_reply, unix_tid) == 28 );
+C_ASSERT( sizeof(struct get_thread_times_reply) == 32 );
 C_ASSERT( FIELD_OFFSET(struct set_thread_info_request, handle) == 12 );
 C_ASSERT( FIELD_OFFSET(struct set_thread_info_request, mask) == 16 );
 C_ASSERT( FIELD_OFFSET(struct set_thread_info_request, priority) == 20 );
@@ -1042,6 +1046,8 @@ C_ASSERT( FIELD_OFFSET(struct get_directory_cache_entry_request, handle) == 12 )
 C_ASSERT( sizeof(struct get_directory_cache_entry_request) == 16 );
 C_ASSERT( FIELD_OFFSET(struct get_directory_cache_entry_reply, entry) == 8 );
 C_ASSERT( sizeof(struct get_directory_cache_entry_reply) == 16 );
+C_ASSERT( FIELD_OFFSET(struct get_shared_memory_request, tid) == 12 );
+C_ASSERT( sizeof(struct get_shared_memory_request) == 16 );
 C_ASSERT( FIELD_OFFSET(struct flush_request, async) == 16 );
 C_ASSERT( sizeof(struct flush_request) == 56 );
 C_ASSERT( FIELD_OFFSET(struct flush_reply, event) == 8 );
@@ -1335,16 +1341,18 @@ C_ASSERT( FIELD_OFFSET(struct next_process_reply, threads) == 20 );
 C_ASSERT( FIELD_OFFSET(struct next_process_reply, priority) == 24 );
 C_ASSERT( FIELD_OFFSET(struct next_process_reply, handles) == 28 );
 C_ASSERT( FIELD_OFFSET(struct next_process_reply, unix_pid) == 32 );
-C_ASSERT( sizeof(struct next_process_reply) == 40 );
+C_ASSERT( FIELD_OFFSET(struct next_process_reply, start_time) == 40 );
+C_ASSERT( sizeof(struct next_process_reply) == 48 );
 C_ASSERT( FIELD_OFFSET(struct next_thread_request, handle) == 12 );
 C_ASSERT( FIELD_OFFSET(struct next_thread_request, reset) == 16 );
 C_ASSERT( sizeof(struct next_thread_request) == 24 );
 C_ASSERT( FIELD_OFFSET(struct next_thread_reply, count) == 8 );
 C_ASSERT( FIELD_OFFSET(struct next_thread_reply, pid) == 12 );
 C_ASSERT( FIELD_OFFSET(struct next_thread_reply, tid) == 16 );
-C_ASSERT( FIELD_OFFSET(struct next_thread_reply, base_pri) == 20 );
-C_ASSERT( FIELD_OFFSET(struct next_thread_reply, delta_pri) == 24 );
-C_ASSERT( sizeof(struct next_thread_reply) == 32 );
+C_ASSERT( FIELD_OFFSET(struct next_thread_reply, creation_time) == 24 );
+C_ASSERT( FIELD_OFFSET(struct next_thread_reply, base_pri) == 32 );
+C_ASSERT( FIELD_OFFSET(struct next_thread_reply, delta_pri) == 36 );
+C_ASSERT( sizeof(struct next_thread_reply) == 40 );
 C_ASSERT( FIELD_OFFSET(struct wait_debug_event_request, get_handle) == 12 );
 C_ASSERT( sizeof(struct wait_debug_event_request) == 16 );
 C_ASSERT( FIELD_OFFSET(struct wait_debug_event_reply, pid) == 8 );

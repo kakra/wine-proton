@@ -53,6 +53,18 @@ struct request_max_size
 #define FIRST_USER_HANDLE 0x0020
 #define LAST_USER_HANDLE  0xffef
 
+typedef struct
+{
+    unsigned int last_input_time;
+} shmglobal_t;
+
+typedef struct
+{
+    int             queue_bits;
+    user_handle_t   input_focus;
+    user_handle_t   input_capture;
+    user_handle_t   input_active;
+} shmlocal_t;
 
 
 typedef union
@@ -982,6 +994,8 @@ struct get_thread_times_reply
     struct reply_header __header;
     timeout_t    creation_time;
     timeout_t    exit_time;
+    int          unix_pid;
+    int          unix_tid;
 };
 
 
@@ -1545,6 +1559,18 @@ struct get_directory_cache_entry_reply
     int          entry;
     /* VARARG(free,ints); */
     char __pad_12[4];
+};
+
+
+
+struct get_shared_memory_request
+{
+    struct request_header __header;
+    thread_id_t tid;
+};
+struct get_shared_memory_reply
+{
+    struct reply_header __header;
 };
 
 
@@ -2405,8 +2431,9 @@ struct next_process_reply
     int          priority;
     int          handles;
     int          unix_pid;
-    /* VARARG(filename,unicode_str); */
     char __pad_36[4];
+    timeout_t    start_time;
+    /* VARARG(filename,unicode_str); */
 };
 
 
@@ -2424,9 +2451,10 @@ struct next_thread_reply
     int          count;
     process_id_t pid;
     thread_id_t  tid;
+    char __pad_20[4];
+    timeout_t    creation_time;
     int          base_pri;
     int          delta_pri;
-    char __pad_28[4];
 };
 
 
@@ -5800,6 +5828,7 @@ enum request
     REQ_get_handle_unix_name,
     REQ_get_handle_fd,
     REQ_get_directory_cache_entry,
+    REQ_get_shared_memory,
     REQ_flush,
     REQ_get_file_info,
     REQ_get_volume_info,
@@ -6103,6 +6132,7 @@ union generic_request
     struct get_handle_unix_name_request get_handle_unix_name_request;
     struct get_handle_fd_request get_handle_fd_request;
     struct get_directory_cache_entry_request get_directory_cache_entry_request;
+    struct get_shared_memory_request get_shared_memory_request;
     struct flush_request flush_request;
     struct get_file_info_request get_file_info_request;
     struct get_volume_info_request get_volume_info_request;
@@ -6404,6 +6434,7 @@ union generic_reply
     struct get_handle_unix_name_reply get_handle_unix_name_reply;
     struct get_handle_fd_reply get_handle_fd_reply;
     struct get_directory_cache_entry_reply get_directory_cache_entry_reply;
+    struct get_shared_memory_reply get_shared_memory_reply;
     struct flush_reply flush_reply;
     struct get_file_info_reply get_file_info_reply;
     struct get_volume_info_reply get_volume_info_reply;
@@ -6654,6 +6685,6 @@ union generic_reply
     struct esync_msgwait_reply esync_msgwait_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 577
+#define SERVER_PROTOCOL_VERSION 578
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */
