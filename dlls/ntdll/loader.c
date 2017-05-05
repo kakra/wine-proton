@@ -3341,6 +3341,36 @@ PIMAGE_NT_HEADERS WINAPI RtlImageNtHeader(HMODULE hModule)
 }
 
 
+/***********************************************************************
+ *           user_shared_data_init
+ *
+ * Initializes a user shared
+ */
+static void user_shared_data_init(void)
+{
+    void *addr = user_shared_data_external;
+    SIZE_T data_size = page_size;
+    ULONG old_prot;
+
+    /* initialize time fields */
+    __wine_user_shared_data();
+
+    /* invalidate high times to prevent race conditions */
+    user_shared_data->SystemTime.High2Time = 0;
+    user_shared_data->SystemTime.High1Time = -1;
+
+    user_shared_data->InterruptTime.High2Time = 0;
+    user_shared_data->InterruptTime.High1Time = -1;
+
+    user_shared_data->u.TickCount.High2Time  = 0;
+    user_shared_data->u.TickCount.High1Time  = -1;
+
+    /* copy to correct address and make it non accessible */
+    memcpy(user_shared_data_external, user_shared_data, sizeof(*user_shared_data));
+    NtProtectVirtualMemory( NtCurrentProcess(), &addr, &data_size, PAGE_NOACCESS, &old_prot );
+}
+
+
 /******************************************************************
  *		LdrInitializeThunk (NTDLL.@)
  *
@@ -3645,6 +3675,7 @@ void __wine_process_init(void)
     NtCurrentTeb()->Peb->LoaderLock = &loader_section;
     update_user_process_params( &wm->ldr.FullDllName );
     version_init( wm->ldr.FullDllName.Buffer );
+    user_shared_data_init();
     hidden_exports_init( wm->ldr.FullDllName.Buffer );
     virtual_set_large_address_space();
 
