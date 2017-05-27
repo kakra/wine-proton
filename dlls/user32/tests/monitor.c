@@ -225,6 +225,7 @@ static void test_enumdisplaydevices(void)
     int adapter_index;
     int monitor_index;
     BOOL ret;
+    int num;
 
     if (!pEnumDisplayDevicesA)
     {
@@ -276,6 +277,17 @@ static void test_enumdisplaydevices(void)
     ok(!strcmp(primary_monitor_device_name, primary_device_name),
        "monitor device name %s, device name %s\n", primary_monitor_device_name,
        primary_device_name);
+
+    dd.cb = sizeof(dd);
+    for (num = 0;; num++)
+    {
+        ret = pEnumDisplayDevicesA(primary_device_name, num, &dd, 0);
+        if (!ret) break;
+
+        dd.DeviceID[63] = 0;
+        ok(!strcasecmp(dd.DeviceID, "Monitor\\Default_Monitor\\{4D36E96E-E325-11CE-BFC1-08002BE10318}\\"),
+           "DeviceID \"%s\" does not start with \"Monitor\\Default_Monitor\\...\" prefix\n", dd.DeviceID);
+    }
 }
 
 struct vid_mode
