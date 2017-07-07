@@ -42,6 +42,7 @@ enum deferred_cmd
 
     DEFERRED_CSSETSHADER,               /* cs_info */
     DEFERRED_DSSETSHADER,               /* ds_info */
+    DEFERRED_GSSETSHADER,               /* gs_info */
     DEFERRED_HSSETSHADER,               /* hs_info */
     DEFERRED_PSSETSHADER,               /* ps_info */
     DEFERRED_VSSETSHADER,               /* vs_info */
@@ -136,6 +137,11 @@ struct deferred_call
             ID3D11DomainShader *shader;
             /* FIXME: add class instances */
         } ds_info;
+        struct
+        {
+            ID3D11GeometryShader *shader;
+            /* FIXME: add class instances */
+        } gs_info;
         struct
         {
             ID3D11HullShader *shader;
@@ -404,6 +410,12 @@ static void free_deferred_calls(struct list *commands)
                     ID3D11DomainShader_Release(call->ds_info.shader);
                 break;
             }
+            case DEFERRED_GSSETSHADER:
+            {
+                if (call->gs_info.shader)
+                    ID3D11GeometryShader_Release(call->gs_info.shader);
+                break;
+            }
             case DEFERRED_HSSETSHADER:
             {
                 if (call->hs_info.shader)
@@ -577,6 +589,11 @@ static void exec_deferred_calls(ID3D11DeviceContext1 *iface, struct list *comman
                 ID3D11DeviceContext1_DSSetShader(iface, call->ds_info.shader, NULL, 0);
                 break;
             }
+            case DEFERRED_GSSETSHADER:
+            {
+                ID3D11DeviceContext1_GSSetShader(iface, call->gs_info.shader, NULL, 0);
+                break;
+            }
             case DEFERRED_HSSETSHADER:
             {
                 ID3D11DeviceContext1_HSSetShader(iface, call->hs_info.shader, NULL, 0);
@@ -706,7 +723,7 @@ static void exec_deferred_calls(ID3D11DeviceContext1 *iface, struct list *comman
             }
             case DEFERRED_CLEARDEPTHSTENCILVIEW:
             {
-                ID3D11DeviceContext_ClearDepthStencilView(iface, call->clear_depth_info.view,
+                ID3D11DeviceContext1_ClearDepthStencilView(iface, call->clear_depth_info.view,
                         call->clear_depth_info.flags, call->clear_depth_info.depth,
                         call->clear_depth_info.stencil);
                 break;
@@ -4013,8 +4030,18 @@ static void STDMETHODCALLTYPE d3d11_deferred_context_GSSetConstantBuffers(ID3D11
 static void STDMETHODCALLTYPE d3d11_deferred_context_GSSetShader(ID3D11DeviceContext *iface,
         ID3D11GeometryShader *shader, ID3D11ClassInstance *const *class_instances, UINT class_instance_count)
 {
-    FIXME("iface %p, shader %p, class_instances %p, class_instance_count %u stub!\n",
+    struct d3d11_deferred_context *context = impl_from_deferred_ID3D11DeviceContext(iface);
+    struct deferred_call *call;
+
+    TRACE("iface %p, shader %p, class_instances %p, class_instance_count %u.\n",
             iface, shader, class_instances, class_instance_count);
+
+    if (!(call = add_deferred_call(context, 0)))
+        return;
+
+    call->cmd = DEFERRED_GSSETSHADER;
+    if (shader) ID3D11GeometryShader_AddRef(shader);
+    call->gs_info.shader = shader;
 }
 
 static void STDMETHODCALLTYPE d3d11_deferred_context_IASetPrimitiveTopology(ID3D11DeviceContext *iface,
