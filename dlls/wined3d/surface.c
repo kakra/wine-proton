@@ -160,6 +160,7 @@ static void texture2d_blt_fbo(const struct wined3d_device *device, struct wined3
     GLenum gl_filter;
     GLenum buffer;
     RECT s, d;
+    int i;
 
     TRACE("device %p, context %p, filter %s, src_texture %p, src_sub_resource_idx %u, src_location %s, "
             "src_rect %s, dst_texture %p, dst_sub_resource_idx %u, dst_location %s, dst_rect %s.\n",
@@ -272,10 +273,8 @@ static void texture2d_blt_fbo(const struct wined3d_device *device, struct wined3
     context_invalidate_state(context, STATE_FRAMEBUFFER);
 
     gl_info->gl_ops.gl.p_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE));
-    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE1));
-    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE2));
-    context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITEENABLE3));
+    for (i = 0; i < MAX_RENDER_TARGETS; ++i)
+        context_invalidate_state(context, STATE_RENDER(WINED3D_RS_COLORWRITE(i)));
 
     gl_info->gl_ops.gl.p_glDisable(GL_SCISSOR_TEST);
     context_invalidate_state(context, STATE_RENDER(WINED3D_RS_SCISSORTESTENABLE));
