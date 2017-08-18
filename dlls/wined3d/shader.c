@@ -4081,6 +4081,8 @@ void find_ps_compile_args(const struct wined3d_state *state, const struct wined3
                 args->rt_alpha_swizzle |= 1u << i;
         }
     }
+
+    args->dual_source_blend = wined3d_dualblend_enabled(state, gl_info);
 }
 
 static HRESULT pixel_shader_init(struct wined3d_shader *shader, struct wined3d_device *device,
