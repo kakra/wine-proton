@@ -2939,6 +2939,12 @@ static void wined3d_adapter_init_limits(struct wined3d_gl_info *gl_info, struct 
         gl_info->limits.buffers = min(MAX_RENDER_TARGET_VIEWS, gl_max);
         TRACE("Max draw buffers: %u.\n", gl_max);
     }
+    if (gl_info->supported[ARB_BLEND_FUNC_EXTENDED])
+    {
+        gl_info->gl_ops.gl.p_glGetIntegerv(GL_MAX_DUAL_SOURCE_DRAW_BUFFERS, &gl_max);
+        gl_info->limits.dual_buffers = gl_max;
+        TRACE("Max dual source draw buffers: %u.\n", gl_max);
+    }
     if (gl_info->supported[ARB_MULTITEXTURE])
     {
         if (gl_info->supported[WINED3D_GL_LEGACY_CONTEXT])
@@ -3768,6 +3774,10 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter,
         d3d_info->multisample_draw_location = WINED3D_LOCATION_RB_MULTISAMPLE;
 
     TRACE("Max texture stages: %u.\n", d3d_info->limits.ffp_blend_stages);
+
+    d3d_info->valid_dual_rt_mask = 0;
+    for (i = 0; i < gl_info->limits.dual_buffers; ++i)
+        d3d_info->valid_dual_rt_mask |= (1u << i);
 
     if (!d3d_info->shader_color_key)
     {
