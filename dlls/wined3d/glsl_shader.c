@@ -3064,6 +3064,7 @@ static void shader_glsl_get_register_name(const struct wined3d_shader_register *
             break;
 
         case WINED3DSPR_COLOROUT:
+            /* FIXME: should check dual_buffers when dual blending is enabled */
             if (reg->idx[0].offset >= gl_info->limits.buffers)
                 WARN("Write to render target %u, only %d supported.\n",
                         reg->idx[0].offset, gl_info->limits.buffers);
@@ -7972,7 +7973,10 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
     {
         const struct wined3d_shader_signature *output_signature = &shader->output_signature;
 
-        shader_addline(buffer, "vec4 ps_out[%u];\n", gl_info->limits.buffers);
+        if (args->dual_source_blend)
+            shader_addline(buffer, "vec4 ps_out[%u];\n", gl_info->limits.dual_buffers * 2);
+        else
+            shader_addline(buffer, "vec4 ps_out[%u];\n", gl_info->limits.buffers);
         if (output_signature->element_count)
         {
             for (i = 0; i < output_signature->element_count; ++i)
@@ -7987,7 +7991,12 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
                     continue;
                 }
                 if (shader_glsl_use_explicit_attrib_location(gl_info))
-                    shader_addline(buffer, "layout(location = %u) ", output->semantic_idx);
+                {
+                    if (args->dual_source_blend)
+                        shader_addline(buffer, "layout(location = %u, index = %u) ", output->semantic_idx / 2, output->semantic_idx % 2);
+                    else
+                        shader_addline(buffer, "layout(location = %u) ", output->semantic_idx);
+                }
                 shader_addline(buffer, "out %s4 color_out%u;\n",
                         component_type_info[output->component_type].glsl_vector_type, output->semantic_idx);
             }
@@ -8000,7 +8009,12 @@ static GLuint shader_glsl_generate_pshader(const struct wined3d_context *context
             {
                 i = wined3d_bit_scan(&mask);
                 if (shader_glsl_use_explicit_attrib_location(gl_info))
-                    shader_addline(buffer, "layout(location = %u) ", i);
+                {
+                    if (args->dual_source_blend)
+                        shader_addline(buffer, "layout(location = %u, index = %u) ", i / 2, i % 2);
+                    else
+                        shader_addline(buffer, "layout(location = %u) ", i);
+                }
                 shader_addline(buffer, "out vec4 color_out%u;\n", i);
             }
         }
