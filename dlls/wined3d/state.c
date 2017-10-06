@@ -1781,10 +1781,11 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
         {
             DWORD d;
             float f;
-        } scale_bias, const_bias;
+        } scale_bias, const_bias, bias_clamp;
 
         scale_bias.d = state->render_states[WINED3D_RS_SLOPESCALEDEPTHBIAS];
         const_bias.d = state->render_states[WINED3D_RS_DEPTHBIAS];
+        bias_clamp.d = state->render_states[WINED3D_RS_DEPTHBIASCLAMP];
 
         if (context->d3d_info->wined3d_creation_flags & WINED3D_LEGACY_DEPTH_BIAS)
         {
@@ -1811,7 +1812,18 @@ static void state_depthbias(struct wined3d_context *context, const struct wined3
         }
 
         gl_info->gl_ops.gl.p_glEnable(GL_POLYGON_OFFSET_FILL);
-        gl_info->gl_ops.gl.p_glPolygonOffset(factor, units);
+        if (gl_info->supported[EXT_POLYGON_OFFSET_CLAMP])
+        {
+            GL_EXTCALL(glPolygonOffsetClampEXT(factor, units, bias_clamp.f));
+            checkGLcall("glPolygonOffsetClampEXT(...)");
+        }
+        else
+        {
+            if (bias_clamp.f)
+                WARN("EXT_polygon_offset_clamp extension missing, no support for depth bias clamping.\n");
+
+            gl_info->gl_ops.gl.p_glPolygonOffset(factor, units);
+        }
     }
     else
     {
@@ -4678,6 +4690,7 @@ const struct StateEntryTemplate misc_state_template[] =
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor   }, EXT_BLEND_COLOR                 },
     { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               { STATE_RENDER(WINED3D_RS_BLENDFACTOR),               state_blendfactor_w }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 state_depthbias     }, WINED3D_GL_EXT_NONE             },
+    { STATE_RENDER(WINED3D_RS_DEPTHBIASCLAMP),            { STATE_RENDER(WINED3D_RS_DEPTHBIAS),                 NULL                }, WINED3D_GL_EXT_NONE             },
     { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  { STATE_RENDER(WINED3D_RS_ZVISIBLE),                  state_zvisible      }, WINED3D_GL_EXT_NONE             },
     /* Samplers */
     { STATE_SAMPLER(0),                                   { STATE_SAMPLER(0),                                   sampler             }, WINED3D_GL_EXT_NONE             },
