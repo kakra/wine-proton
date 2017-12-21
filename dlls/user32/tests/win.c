@@ -10581,6 +10581,7 @@ static void test_hide_window(void)
 static void test_minimize_window(HWND hwndMain)
 {
     HWND hwnd, hwnd2, hwnd3;
+    RECT rc, rc_expect;
 
     hwnd = CreateWindowExA(0, "MainWindowClass", "Main window", WS_POPUP | WS_VISIBLE,
                            100, 100, 200, 200, 0, 0, GetModuleHandleA(NULL), NULL);
@@ -10689,6 +10690,15 @@ static void test_minimize_window(HWND hwndMain)
     DestroyWindow(hwnd3);
     DestroyWindow(hwnd2);
     DestroyWindow(hwnd);
+
+    /* test NC area */
+    ShowWindow(hwndMain, SW_MINIMIZE);
+    GetWindowRect(hwndMain, &rc);
+    SetRect(&rc_expect, rc.left, rc.top, rc.left, rc.top);
+    DefWindowProcA(hwndMain, WM_NCCALCSIZE, 0, (LPARAM)&rc);
+    ok(EqualRect(&rc, &rc_expect), "expected %s, got %s\n",
+       wine_dbgstr_rect(&rc_expect), wine_dbgstr_rect(&rc));
+    ShowWindow(hwndMain, SW_RESTORE);
 }
 
 static void test_desktop( void )
