@@ -205,6 +205,7 @@ SOURCES = \
 	dmerror.h \
 	dmksctrl.h \
 	dmo.h \
+	dmodshow.idl \
 	dmoreg.h \
 	dmort.h \
 	dmplugin.h \
