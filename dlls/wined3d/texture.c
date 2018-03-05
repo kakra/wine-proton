@@ -2258,6 +2258,12 @@ static void wined3d_texture_unload(struct wined3d_resource *resource)
 static HRESULT texture_resource_sub_resource_map(struct wined3d_resource *resource, unsigned int sub_resource_idx,
         struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags)
 {
+    return E_NOTIMPL;
+}
+
+static HRESULT texture_resource_sub_resource_map_cs(struct wined3d_resource *resource, unsigned int sub_resource_idx,
+        struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags)
+{
     const struct wined3d_format *format = resource->format;
     struct wined3d_texture_sub_resource *sub_resource;
     struct wined3d_device *device = resource->device;
@@ -2388,6 +2394,11 @@ static HRESULT texture_resource_sub_resource_map(struct wined3d_resource *resour
 
 static HRESULT texture_resource_sub_resource_unmap(struct wined3d_resource *resource, unsigned int sub_resource_idx)
 {
+    return E_NOTIMPL;
+}
+
+static HRESULT texture_resource_sub_resource_unmap_cs(struct wined3d_resource *resource, unsigned int sub_resource_idx)
+{
     struct wined3d_texture_sub_resource *sub_resource;
     struct wined3d_device *device = resource->device;
     struct wined3d_context *context = NULL;
@@ -2438,6 +2449,8 @@ static const struct wined3d_resource_ops texture_resource_ops =
     wined3d_texture_unload,
     texture_resource_sub_resource_map,
     texture_resource_sub_resource_unmap,
+    texture_resource_sub_resource_map_cs,
+    texture_resource_sub_resource_unmap_cs,
 };
 
 /* Context activation is done by the caller. */

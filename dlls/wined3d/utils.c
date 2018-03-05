@@ -6309,6 +6309,7 @@ const char *wined3d_debug_location(DWORD location)
     LOCATION_TO_STR(WINED3D_LOCATION_DRAWABLE);
     LOCATION_TO_STR(WINED3D_LOCATION_RB_MULTISAMPLE);
     LOCATION_TO_STR(WINED3D_LOCATION_RB_RESOLVED);
+    LOCATION_TO_STR(WINED3D_LOCATION_PERSISTENT_MAP);
 #undef LOCATION_TO_STR
     if (location)
         FIXME("Unrecognized location flag(s) %#x.\n", location);
