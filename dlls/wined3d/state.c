@@ -4313,7 +4313,11 @@ static void indexbuffer(struct wined3d_context *context, const struct wined3d_st
     else
     {
         struct wined3d_buffer *ib = state->index_buffer;
-        GL_EXTCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_object));
+        // FIXME(acomminos): disasterous.
+        if (ib->locations & WINED3D_LOCATION_PERSISTENT_MAP)
+            GL_EXTCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_heap->buffer_object));
+        else
+            GL_EXTCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib->buffer_object));
     }
 }
 
@@ -4397,6 +4401,7 @@ static void state_cb(struct wined3d_context *context, const struct wined3d_state
     enum wined3d_shader_type shader_type;
     struct wined3d_buffer *buffer;
     unsigned int i, base, count;
+    struct wined3d_bo_address bo_addr;
 
     TRACE("context %p, state %p, state_id %#x.\n", context, state, state_id);
 
@@ -4409,7 +4414,15 @@ static void state_cb(struct wined3d_context *context, const struct wined3d_state
     for (i = 0; i < count; ++i)
     {
         buffer = state->cb[shader_type][i];
-        GL_EXTCALL(glBindBufferBase(GL_UNIFORM_BUFFER, base + i, buffer ? buffer->buffer_object : 0));
+        if (buffer)
+        {
+            wined3d_buffer_get_memory(buffer, &bo_addr, buffer->locations);
+            GL_EXTCALL(glBindBufferRange(GL_UNIFORM_BUFFER, base + i, bo_addr.buffer_object, bo_addr.addr, bo_addr.length));
+        }
+        else
+        {
+            GL_EXTCALL(glBindBufferBase(GL_UNIFORM_BUFFER, base + i, 0));
+        }
     }
     checkGLcall("bind constant buffers");
 }

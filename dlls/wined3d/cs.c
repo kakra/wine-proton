@@ -76,6 +76,7 @@ enum wined3d_cs_op
     WINED3D_CS_OP_GL_TEXTURE_CALLBACK,
     WINED3D_CS_OP_USER_CALLBACK,
     WINED3D_CS_OP_WAIT_IDLE,
+    WINED3D_CS_OP_DISCARD_BUFFER,
     WINED3D_CS_OP_STOP,
 };
 
@@ -462,6 +463,13 @@ struct wined3d_cs_user_callback
 struct wined3d_cs_wait_idle
 {
     enum wined3d_cs_op opcode;
+};
+
+struct wined3d_cs_discard_buffer
+{
+    enum wined3d_cs_op opcode;
+    struct wined3d_buffer *buffer;
+    struct wined3d_map_range map_range;
 };
 
 struct wined3d_cs_stop
@@ -2113,7 +2121,7 @@ static void wined3d_cs_exec_map(struct wined3d_cs *cs, const void *data)
     const struct wined3d_cs_map *op = data;
     struct wined3d_resource *resource = op->resource;
 
-    *op->hr = resource->resource_ops->resource_sub_resource_map(resource,
+    *op->hr = resource->resource_ops->resource_sub_resource_map_cs(resource,
             op->sub_resource_idx, op->map_desc, op->box, op->flags);
 }
 
@@ -2147,7 +2155,7 @@ static void wined3d_cs_exec_unmap(struct wined3d_cs *cs, const void *data)
     const struct wined3d_cs_unmap *op = data;
     struct wined3d_resource *resource = op->resource;
 
-    *op->hr = resource->resource_ops->resource_sub_resource_unmap(resource, op->sub_resource_idx);
+    *op->hr = resource->resource_ops->resource_sub_resource_unmap_cs(resource, op->sub_resource_idx);
 }
 
 HRESULT wined3d_cs_unmap(struct wined3d_cs *cs, struct wined3d_resource *resource, unsigned int sub_resource_idx)
@@ -2590,6 +2598,53 @@ void wined3d_cs_emit_wait_idle(struct wined3d_cs *cs)
     cs->ops->finish(cs, WINED3D_CS_QUEUE_DEFAULT);
 }
 
+static void wined3d_cs_exec_discard_buffer(struct wined3d_cs *cs, const void *data)
+{
+    const struct wined3d_cs_discard_buffer *op = data;
+    struct wined3d_buffer *buffer = op->buffer;
+    HRESULT hr;
+
+    // TODO(acomminos): should call into buffer.c here instead.
+    if (FAILED(hr = wined3d_buffer_heap_free_fenced(buffer->buffer_heap, cs->device, buffer->cs_persistent_map)))
+    {
+        ERR("Failed to do a fenced free on discarded buffer %p, hr %x\n. Freeing anyway.", buffer, hr);
+        wined3d_buffer_heap_free(buffer->buffer_heap, buffer->cs_persistent_map);
+    }
+
+    buffer->cs_persistent_map = op->map_range;
+
+    // TODO(acomminos): merge this logic with buffer.c functions for standalone BOs
+    if (buffer->bind_flags & WINED3D_BIND_VERTEX_BUFFER)
+        device_invalidate_state(cs->device, STATE_STREAMSRC);
+    if (buffer->bind_flags & WINED3D_BIND_INDEX_BUFFER)
+        device_invalidate_state(cs->device, STATE_INDEXBUFFER);
+    if (buffer->bind_flags & WINED3D_BIND_CONSTANT_BUFFER)
+    {
+        device_invalidate_state(cs->device, STATE_CONSTANT_BUFFER(WINED3D_SHADER_TYPE_VERTEX));
+        device_invalidate_state(cs->device, STATE_CONSTANT_BUFFER(WINED3D_SHADER_TYPE_HULL));
+        device_invalidate_state(cs->device, STATE_CONSTANT_BUFFER(WINED3D_SHADER_TYPE_DOMAIN));
+        device_invalidate_state(cs->device, STATE_CONSTANT_BUFFER(WINED3D_SHADER_TYPE_GEOMETRY));
+        device_invalidate_state(cs->device, STATE_CONSTANT_BUFFER(WINED3D_SHADER_TYPE_PIXEL));
+        device_invalidate_state(cs->device, STATE_CONSTANT_BUFFER(WINED3D_SHADER_TYPE_COMPUTE));
+    }
+
+    wined3d_resource_release(&op->buffer->resource);
+}
+
+void wined3d_cs_emit_discard_buffer(struct wined3d_cs *cs, struct wined3d_buffer *buffer, struct wined3d_map_range map_range)
+{
+    struct wined3d_cs_discard_buffer *op;
+
+    op = cs->ops->require_space(cs, sizeof(*op), WINED3D_CS_QUEUE_DEFAULT);
+    op->opcode = WINED3D_CS_OP_DISCARD_BUFFER;
+    op->buffer = buffer;
+    op->map_range = map_range;
+
+    wined3d_resource_acquire(&buffer->resource);
+
+    cs->ops->submit(cs, WINED3D_CS_QUEUE_DEFAULT);
+}
+
 static void wined3d_cs_emit_stop(struct wined3d_cs *cs)
 {
     struct wined3d_cs_stop *op;
@@ -2653,6 +2708,7 @@ static void (* const wined3d_cs_op_handlers[])(struct wined3d_cs *cs, const void
     /* WINED3D_CS_OP_GL_TEXTURE_CALLBACK         */ wined3d_cs_exec_gl_texture_callback,
     /* WINED3D_CS_OP_USER_CALLBACK               */ wined3d_cs_exec_user_callback,
     /* WINED3D_CS_OP_WAIT_IDLE                   */ wined3d_cs_exec_wait_idle,
+    /* WINED3D_CS_OP_DISCARD_BUFFER              */ wined3d_cs_exec_discard_buffer,
 };
 
 static void *wined3d_cs_st_require_space(struct wined3d_cs *cs, size_t size, enum wined3d_cs_queue_id queue_id)
