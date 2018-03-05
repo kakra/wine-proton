@@ -334,6 +334,7 @@ static DWORD wined3d_resource_sanitise_map_flags(const struct wined3d_resource *
 HRESULT CDECL wined3d_resource_map(struct wined3d_resource *resource, unsigned int sub_resource_idx,
         struct wined3d_map_desc *map_desc, const struct wined3d_box *box, DWORD flags)
 {
+    HRESULT hr;
     TRACE("resource %p, sub_resource_idx %u, map_desc %p, box %s, flags %#x.\n",
             resource, sub_resource_idx, map_desc, debug_box(box), flags);
 
@@ -356,16 +357,27 @@ HRESULT CDECL wined3d_resource_map(struct wined3d_resource *resource, unsigned i
     }
 
     flags = wined3d_resource_sanitise_map_flags(resource, flags);
-    wined3d_resource_wait_idle(resource);
+    if (FAILED(hr = resource->resource_ops->resource_sub_resource_map(resource, sub_resource_idx, map_desc, box, flags)))
+    {
+        TRACE_(d3d_perf)("Mapping resource %p on the command stream.\n", resource);
+        wined3d_resource_wait_idle(resource);
+        hr = wined3d_cs_map(resource->device->cs, resource, sub_resource_idx, map_desc, box, flags);
+    }
 
-    return wined3d_cs_map(resource->device->cs, resource, sub_resource_idx, map_desc, box, flags);
+    return hr;
 }
 
 HRESULT CDECL wined3d_resource_unmap(struct wined3d_resource *resource, unsigned int sub_resource_idx)
 {
+    HRESULT hr;
     TRACE("resource %p, sub_resource_idx %u.\n", resource, sub_resource_idx);
 
-    return wined3d_cs_unmap(resource->device->cs, resource, sub_resource_idx);
+    if (FAILED(hr = resource->resource_ops->resource_sub_resource_unmap(resource, sub_resource_idx)))
+    {
+        TRACE_(d3d_perf)("Unmapping resource %p on the command stream.\n", resource);
+        hr = wined3d_cs_unmap(resource->device->cs, resource, sub_resource_idx);
+    }
+    return hr;
 }
 
 void CDECL wined3d_resource_preload(struct wined3d_resource *resource)
