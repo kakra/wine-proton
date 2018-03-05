@@ -551,6 +551,15 @@ static void wined3d_cs_exec_present(struct wined3d_cs *cs, const void *data)
     }
 
     InterlockedDecrement(&cs->pending_presents);
+
+    // FIXME(acomminos): is this the right place to put double-buffered frame
+    //                   timing based logic?
+    // FIXME(acomminos): this conditional sucks, replace with fancier feature check
+    if (cs->device->wo_buffer_heap && cs->device->cb_buffer_heap)
+    {
+        wined3d_buffer_heap_cs_fence_issue(cs->device->wo_buffer_heap, cs->device);
+        wined3d_buffer_heap_cs_fence_issue(cs->device->cb_buffer_heap, cs->device);
+    }
 }
 
 void wined3d_cs_emit_present(struct wined3d_cs *cs, struct wined3d_swapchain *swapchain,

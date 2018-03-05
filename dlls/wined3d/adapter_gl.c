@@ -58,6 +58,7 @@ static const struct wined3d_extension_map gl_extension_map[] =
     /* ARB */
     {"GL_ARB_base_instance",                ARB_BASE_INSTANCE             },
     {"GL_ARB_blend_func_extended",          ARB_BLEND_FUNC_EXTENDED       },
+    {"GL_ARB_buffer_storage",               ARB_BUFFER_STORAGE            },
     {"GL_ARB_clear_buffer_object",          ARB_CLEAR_BUFFER_OBJECT       },
     {"GL_ARB_clear_texture",                ARB_CLEAR_TEXTURE             },
     {"GL_ARB_clip_control",                 ARB_CLIP_CONTROL              },
@@ -2075,6 +2076,8 @@ static void load_gl_funcs(struct wined3d_gl_info *gl_info)
     /* GL_ARB_blend_func_extended */
     USE_GL_FUNC(glBindFragDataLocationIndexed)
     USE_GL_FUNC(glGetFragDataIndex)
+    /* GL_ARB_buffer_storage */
+    USE_GL_FUNC(glBufferStorage)
     /* GL_ARB_clear_buffer_object */
     USE_GL_FUNC(glClearBufferData)
     USE_GL_FUNC(glClearBufferSubData)
