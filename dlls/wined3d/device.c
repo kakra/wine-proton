@@ -837,6 +837,53 @@ static void destroy_default_samplers(struct wined3d_device *device, struct wined
     device->null_sampler = NULL;
 }
 
+/* Context activation is done by the caller. */
+static void create_buffer_heap(struct wined3d_device *device, struct wined3d_context *context)
+{
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+    // TODO(acomminos): kill this magic number. perhaps base on vram.
+    GLsizeiptr geo_heap_size = 512 * 1024 * 1024;
+    // We choose a constant buffer size of 128MB, the same as NVIDIA claims to
+    // use in their Direct3D driver for discarded constant buffers.
+    GLsizeiptr cb_heap_size = 128 * 1024 * 1024;
+    GLint ub_alignment;
+    HRESULT hr;
+
+    if (gl_info->supported[ARB_BUFFER_STORAGE])
+    {
+        gl_info->gl_ops.gl.p_glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &ub_alignment);
+
+        // Align constant buffer heap size, in case GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT isn't a power of two (for some reason).
+        cb_heap_size -= cb_heap_size % ub_alignment;
+
+        if (FAILED(hr = wined3d_buffer_heap_create(context, geo_heap_size, 0, TRUE, &device->wo_buffer_heap)))
+        {
+            ERR("Failed to create write-only persistent buffer heap, hr %#x.\n", hr);
+        }
+
+        if (FAILED(hr = wined3d_buffer_heap_create(context, cb_heap_size, ub_alignment, TRUE, &device->cb_buffer_heap)))
+        {
+            ERR("Failed to create persistent buffer heap for constant buffers, hr %#x.\n", hr);
+        }
+
+        FIXME("Initialized PBA (geo_heap_size: %ld, cb_heap_size: %ld, ub_align: %d)\n", geo_heap_size, cb_heap_size, ub_alignment);
+    }
+    else
+    {
+        FIXME("Not using PBA, ARB_buffer_storage unsupported.\n");
+    }
+}
+
+/* Context activation is done by the caller. */
+static void destroy_buffer_heap(struct wined3d_device *device, struct wined3d_context *context)
+{
+    if (device->wo_buffer_heap)
+        wined3d_buffer_heap_destroy(device->wo_buffer_heap, context);
+
+    if (device->cb_buffer_heap)
+        wined3d_buffer_heap_destroy(device->cb_buffer_heap, context);
+}
+
 static LONG fullscreen_style(LONG style)
 {
     /* Make sure the window is managed, otherwise we won't get keyboard input. */
@@ -1001,6 +1048,8 @@ static void wined3d_device_delete_opengl_contexts_cs(void *object)
     device->shader_backend->shader_free_private(device);
     destroy_dummy_textures(device, context);
     destroy_default_samplers(device, context);
+    destroy_buffer_heap(device, context);
+
     context_release(context);
 
     while (device->context_count)
@@ -1050,6 +1099,9 @@ static void wined3d_device_create_primary_opengl_context_cs(void *object)
     context = context_acquire(device, target, 0);
     create_dummy_textures(device, context);
     create_default_samplers(device, context);
+
+    create_buffer_heap(device, context);
+
     context_release(context);
 }
 

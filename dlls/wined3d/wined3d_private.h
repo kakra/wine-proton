@@ -1699,6 +1699,9 @@ void wined3d_fence_destroy(struct wined3d_fence *fence) DECLSPEC_HIDDEN;
 void wined3d_fence_issue(struct wined3d_fence *fence, const struct wined3d_device *device) DECLSPEC_HIDDEN;
 enum wined3d_fence_result wined3d_fence_wait(const struct wined3d_fence *fence,
         const struct wined3d_device *device) DECLSPEC_HIDDEN;
+// XXX(acomminos): really expose this?
+enum wined3d_fence_result wined3d_fence_test(const struct wined3d_fence *fence,
+        const struct wined3d_device *device, DWORD flags) DECLSPEC_HIDDEN;
 
 /* Direct3D terminology with little modifications. We do not have an issued
  * state because only the driver knows about it, but we have a created state
@@ -3033,6 +3036,10 @@ struct wined3d_device
     /* Context management */
     struct wined3d_context **contexts;
     UINT context_count;
+
+    /* Dynamic buffer heap */
+    struct wined3d_buffer_heap *wo_buffer_heap;
+    struct wined3d_buffer_heap *cb_buffer_heap;
 };
 
 void device_clear_render_targets(struct wined3d_device *device, UINT rt_count, const struct wined3d_fb_state *fb,
@@ -3540,6 +3547,12 @@ void state_init(struct wined3d_state *state, struct wined3d_fb_state *fb,
         const struct wined3d_d3d_info *d3d_info, DWORD flags) DECLSPEC_HIDDEN;
 void state_unbind_resources(struct wined3d_state *state) DECLSPEC_HIDDEN;
 
+struct wined3d_map_range
+{
+    GLintptr offset;
+    GLsizeiptr size;
+};
+
 enum wined3d_cs_queue_id
 {
     WINED3D_CS_QUEUE_DEFAULT = 0,
@@ -3723,11 +3736,60 @@ enum wined3d_buffer_conversion_type
     CONV_POSITIONT,
 };
 
-struct wined3d_map_range
+struct wined3d_buffer_heap_element;
+struct wined3d_buffer_heap_fenced_element;
+
+// Number of power-of-two buckets to populate.
+#define WINED3D_BUFFER_HEAP_BINS 32
+
+struct wined3d_buffer_heap_bin
 {
-    UINT offset;
-    UINT size;
+    struct wined3d_buffer_heap_element *head;
+    struct wined3d_buffer_heap_element *tail;
 };
+
+struct wined3d_buffer_heap_bin_set
+{
+    struct wined3d_buffer_heap_bin bins[WINED3D_BUFFER_HEAP_BINS];
+};
+
+// A heap that manages allocations with a single GL buffer.
+struct wined3d_buffer_heap
+{
+    GLuint buffer_object;
+    void *map_ptr;
+    GLsizeiptr alignment;
+    CRITICAL_SECTION temp_lock; // Temporary lock while we implement the fenced free list.
+
+    struct wined3d_buffer_heap_bin_set free_list;
+
+    // Elements that need to be fenced, but haven't reached the required size.
+    struct wined3d_buffer_heap_bin_set pending_fenced_bins;
+
+    // List of sets of buffers behind a common fence, in FIFO order.
+    struct wined3d_buffer_heap_fenced_element *fenced_head;
+    struct wined3d_buffer_heap_fenced_element *fenced_tail;
+};
+
+HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr size, GLsizeiptr alignment, BOOL write_only, struct wined3d_buffer_heap **heap) DECLSPEC_HIDDEN;
+HRESULT wined3d_buffer_heap_destroy(struct wined3d_buffer_heap *heap, struct wined3d_context *context) DECLSPEC_HIDDEN;
+// Fetches a buffer from the heap of at least the given size.
+// Attempts to coalesce blocks under memory pressure.
+HRESULT wined3d_buffer_heap_alloc(struct wined3d_buffer_heap *heap, GLsizeiptr size, struct wined3d_map_range* out_range) DECLSPEC_HIDDEN;
+// Immediately frees a heap-allocated buffer segment.
+HRESULT wined3d_buffer_heap_free(struct wined3d_buffer_heap *heap, struct wined3d_map_range range) DECLSPEC_HIDDEN;
+// Enqueues a buffer segment to return to the heap once its fence has been signaled.
+HRESULT wined3d_buffer_heap_free_fenced(struct wined3d_buffer_heap *heap, struct wined3d_device *device, struct wined3d_map_range range) DECLSPEC_HIDDEN;
+// Issues a fence for the current set of pending fenced buffers.
+// Double-buffered: if the last fence issued has not yet been triggered, waits
+// on it.
+HRESULT wined3d_buffer_heap_cs_fence_issue(struct wined3d_buffer_heap *heap, struct wined3d_device *device) DECLSPEC_HIDDEN;
+// Waits on the next issued fence in FIFO order. Frees the fenced buffers after
+// the fence has been triggered.
+HRESULT wined3d_buffer_heap_cs_fence_wait(struct wined3d_buffer_heap *heap, struct wined3d_device *device) DECLSPEC_HIDDEN;
+// Performs deferred coalescing of buffers. To be called under memory pressure.
+// Outputs the number of coalesced regions in `num_coalesced`.
+HRESULT wined3d_buffer_heap_deferred_coalesce(struct wined3d_buffer_heap *heap, int *num_coalesced) DECLSPEC_HIDDEN;
 
 struct wined3d_buffer
 {
