@@ -4411,19 +4411,51 @@ static void state_cb(struct wined3d_context *context, const struct wined3d_state
         shader_type = WINED3D_SHADER_TYPE_COMPUTE;
 
     wined3d_gl_limits_get_uniform_block_range(&gl_info->limits, shader_type, &base, &count);
-    for (i = 0; i < count; ++i)
+
+    if (gl_info->supported[ARB_MULTI_BIND])
     {
-        buffer = state->cb[shader_type][i];
-        if (buffer)
+        GLuint buffer_objects[count];
+        GLsizeiptr buffer_offsets[count];
+        GLsizeiptr buffer_sizes[count];
+
+        for (i = 0; i < count; ++i)
         {
-            wined3d_buffer_get_memory(buffer, &bo_addr, buffer->locations);
-            GL_EXTCALL(glBindBufferRange(GL_UNIFORM_BUFFER, base + i, bo_addr.buffer_object, bo_addr.addr, bo_addr.length));
+            buffer = state->cb[shader_type][i];
+            if (buffer)
+            {
+                wined3d_buffer_get_memory(buffer, &bo_addr, buffer->locations);
+                buffer_objects[i] = bo_addr.buffer_object;
+                buffer_offsets[i] = bo_addr.addr;
+                buffer_sizes[i] = bo_addr.length;
+            }
+            else
+            {
+                buffer_objects[i] = buffer_offsets[i] = 0;
+                // The ARB_multi_bind spec states that an error may be thrown if
+                // `size` is less than or equal to zero, Thus, we specify a size for
+                // unused buffers anyway.
+                buffer_sizes[i] = 1;
+            }
         }
-        else
+        GL_EXTCALL(glBindBuffersRange(GL_UNIFORM_BUFFER, base, count, buffer_objects, buffer_offsets, buffer_sizes));
+    }
+    else
+    {
+        for (i = 0; i < count; ++i)
         {
-            GL_EXTCALL(glBindBufferBase(GL_UNIFORM_BUFFER, base + i, 0));
+            buffer = state->cb[shader_type][i];
+            if (buffer)
+            {
+                wined3d_buffer_get_memory(buffer, &bo_addr, buffer->locations);
+                GL_EXTCALL(glBindBufferRange(GL_UNIFORM_BUFFER, base + i, bo_addr.buffer_object, bo_addr.addr, bo_addr.length));
+            }
+            else
+            {
+                GL_EXTCALL(glBindBufferBase(GL_UNIFORM_BUFFER, base + i, 0));
+            }
         }
     }
+
     checkGLcall("bind constant buffers");
 }
 
