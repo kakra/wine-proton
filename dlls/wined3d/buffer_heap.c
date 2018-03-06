@@ -169,7 +169,7 @@ HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr s
     {
         access_flags |= GL_MAP_READ_BIT;
     }
-    storage_flags = access_flags;
+    storage_flags = GL_CLIENT_STORAGE_BIT | access_flags;
 
     // TODO(acomminos): where should we be checking for errors here?
     GL_EXTCALL(glGenBuffers(1, &object->buffer_object));
