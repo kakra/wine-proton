@@ -469,7 +469,7 @@ struct wined3d_cs_discard_buffer
 {
     enum wined3d_cs_op opcode;
     struct wined3d_buffer *buffer;
-    struct wined3d_map_range map_range;
+    struct wined3d_buffer_heap_element *map_range;
 };
 
 struct wined3d_cs_stop
@@ -2626,14 +2626,14 @@ static void wined3d_cs_exec_discard_buffer(struct wined3d_cs *cs, const void *da
     wined3d_resource_release(&op->buffer->resource);
 }
 
-void wined3d_cs_emit_discard_buffer(struct wined3d_cs *cs, struct wined3d_buffer *buffer, struct wined3d_map_range map_range)
+void wined3d_cs_emit_discard_buffer(struct wined3d_cs *cs, struct wined3d_buffer *buffer, struct wined3d_buffer_heap_element *elem)
 {
     struct wined3d_cs_discard_buffer *op;
 
     op = cs->ops->require_space(cs, sizeof(*op), WINED3D_CS_QUEUE_DEFAULT);
     op->opcode = WINED3D_CS_OP_DISCARD_BUFFER;
     op->buffer = buffer;
-    op->map_range = map_range;
+    op->map_range = elem;
 
     wined3d_resource_acquire(&buffer->resource);
 
