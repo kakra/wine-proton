@@ -3558,6 +3558,18 @@ struct wined3d_map_range
     GLsizeiptr size;
 };
 
+struct wined3d_buffer_heap_element
+{
+    struct wined3d_map_range range;
+
+    // rbtree data
+    struct wine_rb_entry entry;
+
+    // Binned free list positions
+    struct wined3d_buffer_heap_element *next;
+    struct wined3d_buffer_heap_element *prev;
+};
+
 enum wined3d_cs_queue_id
 {
     WINED3D_CS_QUEUE_DEFAULT = 0,
@@ -3701,7 +3713,7 @@ void wined3d_cs_emit_unload_resource(struct wined3d_cs *cs, struct wined3d_resou
 void wined3d_cs_emit_update_sub_resource(struct wined3d_cs *cs, struct wined3d_resource *resource,
         unsigned int sub_resource_idx, const struct wined3d_box *box, const void *data, unsigned int row_pitch,
         unsigned int slice_pitch) DECLSPEC_HIDDEN;
-void wined3d_cs_emit_discard_buffer(struct wined3d_cs *cs, struct wined3d_buffer *buffer, struct wined3d_map_range map_range) DECLSPEC_HIDDEN;
+void wined3d_cs_emit_discard_buffer(struct wined3d_cs *cs, struct wined3d_buffer *buffer, struct wined3d_buffer_heap_element *map_range) DECLSPEC_HIDDEN;
 void wined3d_cs_init_object(struct wined3d_cs *cs,
         void (*callback)(void *object), void *object) DECLSPEC_HIDDEN;
 HRESULT wined3d_cs_map(struct wined3d_cs *cs, struct wined3d_resource *resource, unsigned int sub_resource_idx,
@@ -3742,7 +3754,6 @@ enum wined3d_buffer_conversion_type
     CONV_POSITIONT,
 };
 
-struct wined3d_buffer_heap_element;
 struct wined3d_buffer_heap_fenced_element;
 
 // Number of power-of-two buckets to populate.
@@ -3781,11 +3792,11 @@ HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr s
 HRESULT wined3d_buffer_heap_destroy(struct wined3d_buffer_heap *heap, struct wined3d_context *context) DECLSPEC_HIDDEN;
 // Fetches a buffer from the heap of at least the given size.
 // Attempts to coalesce blocks under memory pressure.
-HRESULT wined3d_buffer_heap_alloc(struct wined3d_buffer_heap *heap, GLsizeiptr size, struct wined3d_map_range* out_range) DECLSPEC_HIDDEN;
+HRESULT wined3d_buffer_heap_alloc(struct wined3d_buffer_heap *heap, GLsizeiptr size, struct wined3d_buffer_heap_element** out_elem) DECLSPEC_HIDDEN;
 // Immediately frees a heap-allocated buffer segment.
-HRESULT wined3d_buffer_heap_free(struct wined3d_buffer_heap *heap, struct wined3d_map_range range) DECLSPEC_HIDDEN;
+HRESULT wined3d_buffer_heap_free(struct wined3d_buffer_heap *heap, struct wined3d_buffer_heap_element *elem) DECLSPEC_HIDDEN;
 // Enqueues a buffer segment to return to the heap once its fence has been signaled.
-HRESULT wined3d_buffer_heap_free_fenced(struct wined3d_buffer_heap *heap, struct wined3d_device *device, struct wined3d_map_range range) DECLSPEC_HIDDEN;
+HRESULT wined3d_buffer_heap_free_fenced(struct wined3d_buffer_heap *heap, struct wined3d_device *device, struct wined3d_buffer_heap_element *elem) DECLSPEC_HIDDEN;
 // Issues a fence for the current set of pending fenced buffers.
 // Double-buffered: if the last fence issued has not yet been triggered, waits
 // on it.
@@ -3824,8 +3835,8 @@ struct wined3d_buffer
 
     /* persistent mapped buffer */
     struct wined3d_buffer_heap *buffer_heap;
-    struct wined3d_map_range cs_persistent_map;
-    struct wined3d_map_range mt_persistent_map; // TODO: make struct list?
+    struct wined3d_buffer_heap_element *cs_persistent_map;
+    struct wined3d_buffer_heap_element *mt_persistent_map;
 };
 
 static inline struct wined3d_buffer *buffer_from_resource(struct wined3d_resource *resource)
