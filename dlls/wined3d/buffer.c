@@ -1598,6 +1598,10 @@ static HRESULT buffer_init(struct wined3d_buffer *buffer, struct wined3d_device 
         {
             WARN_(d3d_perf)("Not creating a persistent mapping for a dynamic buffer because ARB_buffer_storage is unsupported.\n");
         }
+        else if (bind_flags & WINED3D_BIND_SHADER_RESOURCE)
+        {
+            FIXME_(d3d_perf)("Not using a persistent mapping for shader resource buffer %p (unimplemented)\n", buffer);
+        }
         else
         {
             // If supported, use persistent mapped buffers instead of a
