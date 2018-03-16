@@ -833,6 +833,13 @@ static BOOL match_broken_viewport_subpixel_bits(const struct wined3d_gl_info *gl
     return !wined3d_caps_gl_ctx_test_viewport_subpixel_bits(ctx);
 }
 
+static BOOL match_mesa(const struct wined3d_gl_info *gl_info, struct wined3d_caps_gl_ctx *ctx,
+        const char *gl_renderer, enum wined3d_gl_vendor gl_vendor,
+        enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
+{
+    return gl_vendor == GL_VENDOR_MESA;
+}
+
 static void quirk_apple_glsl_constants(struct wined3d_gl_info *gl_info)
 {
     /* MacOS needs uniforms for relative addressing offsets. This can
@@ -987,6 +994,13 @@ static void quirk_broken_viewport_subpixel_bits(struct wined3d_gl_info *gl_info)
     }
 }
 
+static void quirk_use_client_storage_bit(struct wined3d_gl_info *gl_info)
+{
+    // Using ARB_buffer_storage on Mesa requires the GL_CLIENT_STORAGE_BIT to be
+    // set to use GTT for immutable buffers on radeon (see PIPE_USAGE_STREAM).
+    gl_info->quirks |= WINED3D_QUIRK_USE_CLIENT_STORAGE_BIT;
+}
+
 static const struct wined3d_gpu_description *query_gpu_description(const struct wined3d_gl_info *gl_info,
         UINT64 *vram_bytes)
 {
@@ -1139,6 +1153,11 @@ static void fixup_extensions(struct wined3d_gl_info *gl_info, struct wined3d_cap
             match_broken_viewport_subpixel_bits,
             quirk_broken_viewport_subpixel_bits,
             "NVIDIA viewport subpixel bits bug"
+        },
+        {
+           match_mesa,
+           quirk_use_client_storage_bit,
+           "Use GL_CLIENT_STORAGE_BIT for persistent buffers on mesa",
         },
     };
 

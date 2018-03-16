@@ -165,7 +165,20 @@ HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr s
         access_flags |= GL_MAP_READ_BIT;
     }
 
-    storage_flags = GL_CLIENT_STORAGE_BIT | access_flags;
+    storage_flags = access_flags;
+    // FIXME(acomminos): So, about GL_CLIENT_STORAGE_BIT:
+    // - On NVIDIA, DMA CACHED memory is used when this flag is set. SYSTEM HEAP
+    //   memory is used without it, which (in my testing) is much faster.
+    // - On Mesa, GTT is used when this flag is set. This is what we want- we
+    //   upload to VRAM occur otherwise, which is unusably slow (on radeon).
+    //
+    // Thus, we're only going to set this on mesa for now.
+    // Hints are awful anyway.
+    if (gl_info->quirks & WINED3D_QUIRK_USE_CLIENT_STORAGE_BIT)
+    {
+        FIXME_(d3d_perf)("PBA: using GL_CLIENT_STORAGE_BIT quirk");
+        storage_flags |= GL_CLIENT_STORAGE_BIT;
+    }
 
     GL_EXTCALL(glGenBuffers(1, &object->buffer_object));
     checkGLcall("glGenBuffers");
