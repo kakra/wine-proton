@@ -841,16 +841,27 @@ static void destroy_default_samplers(struct wined3d_device *device, struct wined
 static void create_buffer_heap(struct wined3d_device *device, struct wined3d_context *context)
 {
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-    // TODO(acomminos): kill this magic number. perhaps base on vram.
-    GLsizeiptr geo_heap_size = 512 * 1024 * 1024;
-    // We choose a constant buffer size of 128MB, the same as NVIDIA claims to
-    // use in their Direct3D driver for discarded constant buffers.
-    GLsizeiptr cb_heap_size = 128 * 1024 * 1024;
-    GLint ub_alignment;
-    HRESULT hr;
+    BOOL use_pba = FALSE;
+    char *env_pba_disable;
 
-    if (gl_info->supported[ARB_BUFFER_STORAGE])
+    if (!gl_info->supported[ARB_BUFFER_STORAGE])
     {
+        FIXME("Not using PBA, ARB_buffer_storage unsupported.\n");
+    }
+    else if ((env_pba_disable = getenv("PBA_DISABLE")) && *env_pba_disable != '0')
+    {
+        FIXME("Not using PBA, envvar 'PBA_DISABLE' set.\n");
+    }
+    else
+    {
+        // TODO(acomminos): kill this magic number. perhaps base on vram.
+        GLsizeiptr geo_heap_size = 512 * 1024 * 1024;
+        // We choose a constant buffer size of 128MB, the same as NVIDIA claims to
+        // use in their Direct3D driver for discarded constant buffers.
+        GLsizeiptr cb_heap_size = 128 * 1024 * 1024;
+        GLint ub_alignment;
+        HRESULT hr;
+
         gl_info->gl_ops.gl.p_glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &ub_alignment);
 
         // Align constant buffer heap size, in case GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT isn't a power of two (for some reason).
@@ -859,19 +870,22 @@ static void create_buffer_heap(struct wined3d_device *device, struct wined3d_con
         if (FAILED(hr = wined3d_buffer_heap_create(context, geo_heap_size, 0, TRUE, &device->wo_buffer_heap)))
         {
             ERR("Failed to create write-only persistent buffer heap, hr %#x.\n", hr);
+            goto fail;
         }
 
         if (FAILED(hr = wined3d_buffer_heap_create(context, cb_heap_size, ub_alignment, TRUE, &device->cb_buffer_heap)))
         {
             ERR("Failed to create persistent buffer heap for constant buffers, hr %#x.\n", hr);
+            goto fail;
         }
 
         FIXME("Initialized PBA (geo_heap_size: %ld, cb_heap_size: %ld, ub_align: %d)\n", geo_heap_size, cb_heap_size, ub_alignment);
+
+        use_pba = TRUE;
     }
-    else
-    {
-        FIXME("Not using PBA, ARB_buffer_storage unsupported.\n");
-    }
+
+fail:
+    device->use_pba = use_pba;
 }
 
 /* Context activation is done by the caller. */

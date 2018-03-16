@@ -25,6 +25,9 @@
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 WINE_DECLARE_DEBUG_CHANNEL(d3d_perf);
 
+// Arbitrary binding to use when binding the persistent buffer.
+#define BIND_TARGET GL_ARRAY_BUFFER
+
 struct wined3d_buffer_heap_fenced_element
 {
     struct wined3d_buffer_heap_bin_set free_list;
@@ -140,7 +143,6 @@ static int free_tree_compare(const void *key, const struct wine_rb_entry *entry)
 HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr size, GLsizeiptr alignment, BOOL write_only, struct wined3d_buffer_heap **buffer_heap)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
-    const GLenum buffer_target = GL_ARRAY_BUFFER;
     GLbitfield access_flags;
     GLbitfield storage_flags;
     struct wined3d_buffer_heap_element *initial_elem;
@@ -162,22 +164,23 @@ HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr s
     {
         access_flags |= GL_MAP_READ_BIT;
     }
+
     storage_flags = GL_CLIENT_STORAGE_BIT | access_flags;
 
-    // TODO(acomminos): where should we be checking for errors here?
     GL_EXTCALL(glGenBuffers(1, &object->buffer_object));
+    checkGLcall("glGenBuffers");
 
-    context_bind_bo(context, buffer_target, object->buffer_object);
+    context_bind_bo(context, BIND_TARGET, object->buffer_object);
 
-    // TODO(acomminos): assert glBufferStorage supported?
-    GL_EXTCALL(glBufferStorage(buffer_target, size, NULL, storage_flags));
+    GL_EXTCALL(glBufferStorage(BIND_TARGET, size, NULL, storage_flags));
+    checkGLcall("glBufferStorage");
 
-    if (!(object->map_ptr = GL_EXTCALL(glMapBufferRange(buffer_target, 0, size, access_flags))))
+    if (!(object->map_ptr = GL_EXTCALL(glMapBufferRange(BIND_TARGET, 0, size, access_flags))))
     {
         ERR("Couldn't map persistent buffer.\n");
         return -1; // FIXME(acomminos): proper error code, cleanup
     }
-    context_bind_bo(context, buffer_target, 0);
+    context_bind_bo(context, BIND_TARGET, 0);
 
     object->fenced_head = object->fenced_tail = NULL;
     object->alignment = alignment;
@@ -195,7 +198,22 @@ HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr s
 /* Context activation is done by the caller. */
 HRESULT wined3d_buffer_heap_destroy(struct wined3d_buffer_heap *heap, struct wined3d_context *context)
 {
-    FIXME("Unimplemented, leaking buffer");
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+
+    context_bind_bo(context, BIND_TARGET, heap->buffer_object);
+    GL_EXTCALL(glUnmapBuffer(BIND_TARGET));
+    checkGLcall("glUnmapBuffer");
+    context_bind_bo(context, BIND_TARGET, 0);
+
+    GL_EXTCALL(glDeleteBuffers(1, &heap->buffer_object));
+    checkGLcall("glDeleteBuffers");
+
+    DeleteCriticalSection(&heap->temp_lock);
+
+    // TODO(acomminos): cleanup free lists, fenced list, etc.
+
+    HeapFree(GetProcessHeap(), 0, heap);
+
     return WINED3D_OK;
 }
 
