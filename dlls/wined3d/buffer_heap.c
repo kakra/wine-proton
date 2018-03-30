@@ -176,7 +176,14 @@ HRESULT wined3d_buffer_heap_create(struct wined3d_context *context, GLsizeiptr s
     // Hints are awful anyway.
     if (gl_info->quirks & WINED3D_QUIRK_USE_CLIENT_STORAGE_BIT)
     {
-        FIXME_(d3d_perf)("PBA: using GL_CLIENT_STORAGE_BIT quirk");
+        FIXME_(d3d_perf)("PBA: using GL_CLIENT_STORAGE_BIT quirk (mesa)\n");
+        storage_flags |= GL_CLIENT_STORAGE_BIT;
+    }
+
+    const char *env_pba_force_gcsb = getenv("__PBA_FORCE_GL_CLIENT_STORAGE_BIT");
+    if (!(gl_info->quirks & WINED3D_QUIRK_USE_CLIENT_STORAGE_BIT) && ((env_pba_force_gcsb) && *env_pba_force_gcsb != '0'))
+    {
+        FIXME_(d3d_perf)("PBA: forcing use of GL_CLIENT_STORAGE_BIT quirk (__PBA_FORCE_GL_CLIENT_STORAGE_BIT=%s)\n",env_pba_force_gcsb);
         storage_flags |= GL_CLIENT_STORAGE_BIT;
     }
 
