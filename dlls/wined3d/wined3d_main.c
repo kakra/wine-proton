@@ -350,6 +350,7 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
 
     DeleteCriticalSection(&wined3d_wndproc_cs);
     DeleteCriticalSection(&wined3d_cs);
+
     return TRUE;
 }
 
