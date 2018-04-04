@@ -316,6 +316,7 @@
 @ cdecl wined3d_vertex_declaration_incref(ptr)
 
 @ cdecl wined3d_access_gl_texture(ptr ptr ptr long)
+@ cdecl wined3d_device_run_cs_callback(ptr ptr ptr long)
 @ cdecl wined3d_dxt1_decode(ptr ptr long long long long long)
 @ cdecl wined3d_dxt1_encode(ptr ptr long long long long long)
 @ cdecl wined3d_dxt3_decode(ptr ptr long long long long long)
