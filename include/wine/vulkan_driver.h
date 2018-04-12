@@ -39,7 +39,7 @@
 #define __WINE_VULKAN_DRIVER_H
 
 /* Wine internal vulkan driver version, needs to be bumped upon vulkan_funcs changes. */
-#define WINE_VULKAN_DRIVER_VERSION 7
+#define WINE_VULKAN_DRIVER_VERSION 8
 
 struct vulkan_funcs
 {
