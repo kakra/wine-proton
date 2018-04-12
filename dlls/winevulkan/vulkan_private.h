@@ -114,6 +114,12 @@ struct VkQueue_T
     VkDeviceQueueCreateFlags flags;
 };
 
+struct VkSwapchainKHR_T
+{
+    struct wine_vk_base base;
+    VkSwapchainKHR swapchain; /* native swapchain */
+};
+
 struct wine_cmd_pool
 {
     VkCommandPool command_pool;
