@@ -2138,7 +2138,7 @@ static HRESULT WINAPI IXAudio2Impl_CommitChanges(IXAudio2 *iface,
 
     TRACE("(%p)->(0x%x): stub!\n", This, operationSet);
 
-    return E_NOTIMPL;
+    return S_OK;
 }
 
 static void WINAPI IXAudio2Impl_GetPerformanceData(IXAudio2 *iface,
