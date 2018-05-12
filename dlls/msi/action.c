@@ -4520,6 +4520,9 @@ static UINT ACTION_PublishProduct(MSIPACKAGE *package)
     if (package->script == SCRIPT_NONE)
         return msi_schedule_action(package, SCRIPT_INSTALL, szPublishProduct);
 
+    if (package->script == SCRIPT_NONE)
+        return msi_schedule_action(package, SCRIPT_INSTALL, szPublishProduct);
+
     if (!list_empty(&package->patches))
     {
         rc = msi_publish_patches(package);
