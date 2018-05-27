@@ -4556,6 +4556,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_deferred_context_Map(ID3D11DeviceContext 
     struct wined3d_resource *wined3d_resource;
     struct wined3d_map_info map_info;
     struct deferred_call *call, *previous = NULL;
+    SIZE_T align;
     HRESULT hr;
 
     TRACE("iface %p, resource %p, subresource_idx %u, map_type %u, map_flags %#x, mapped_subresource %p.\n",
@@ -4591,7 +4592,8 @@ static HRESULT STDMETHODCALLTYPE d3d11_deferred_context_Map(ID3D11DeviceContext 
     if (FAILED(hr))
         return hr;
 
-    if (!(call = add_deferred_call(context, map_info.size)))
+    align = ((sizeof(*call) + 0xf) & ~0xf) - sizeof(*call);
+    if (!(call = add_deferred_call(context, map_info.size + align)))
         return E_OUTOFMEMORY;
 
     call->cmd = DEFERRED_MAP;
@@ -4600,7 +4602,7 @@ static HRESULT STDMETHODCALLTYPE d3d11_deferred_context_Map(ID3D11DeviceContext 
     call->map_info.subresource_idx = subresource_idx;
     call->map_info.map_type = map_type;
     call->map_info.map_flags = map_flags;
-    call->map_info.buffer = (void *)(call + 1);
+    call->map_info.buffer = (BYTE *)(call + 1) + align;
     call->map_info.size = map_info.size;
 
     if (previous)
