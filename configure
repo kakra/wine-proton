@@ -14965,15 +14965,6 @@ test -z "$LIBAVUTIL_CFLAGS" || LIBAVUTIL_CFLAGS=`echo " $LIBAVUTIL_CFLAGS" | sed
 test -z "$LIBAVUTIL_LIBS" || LIBAVUTIL_LIBS=`echo " $LIBAVUTIL_LIBS" | sed 's/ -L\([^/]\)/ -L\$(top_builddir)\/\1/g'`
 
 fi
-if test "x$ac_cv_lib_avcodec_avcodec_find_decoder" != xyes; then :
-  case "x$with_libavutil" in
-  x)   as_fn_append wine_notices "|libavutil ${notice_platform}development files not found (or too old), XAudio2 WMA conversion won't be supported." ;;
-  xno) ;;
-  *)   as_fn_error $? "libavutil ${notice_platform}development files not found (or too old), XAudio2 WMA conversion won't be supported.
-This is an error since --with-libavutil was requested." "$LINENO" 5 ;;
-esac
-
-fi
 
 if test "x$with_ffmpeg" != "xno" -a "x$ac_cv_lib_avutil_av_frame_alloc" = "xyes"
 then
@@ -15008,13 +14999,13 @@ done
 
         if test "$ac_cv_header_libavcodec_avcodec_h" = "yes"
         then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for avcodec_find_decoder in -lavcodec" >&5
-$as_echo_n "checking for avcodec_find_decoder in -lavcodec... " >&6; }
-if ${ac_cv_lib_avcodec_avcodec_find_decoder+:} false; then :
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for avcodec_send_packet in -lavcodec" >&5
+$as_echo_n "checking for avcodec_send_packet in -lavcodec... " >&6; }
+if ${ac_cv_lib_avcodec_avcodec_send_packet+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lavcodec $LIBAVCODEC_LIBS $LIBS"
+LIBS="-lavcodec $LIBAVUTIL_LIBS $LIBAVCODEC_LIBS $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -15024,27 +15015,27 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char avcodec_find_decoder ();
+char avcodec_send_packet ();
 int
 main ()
 {
-return avcodec_find_decoder ();
+return avcodec_send_packet ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_avcodec_avcodec_find_decoder=yes
+  ac_cv_lib_avcodec_avcodec_send_packet=yes
 else
-  ac_cv_lib_avcodec_avcodec_find_decoder=no
+  ac_cv_lib_avcodec_avcodec_send_packet=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_avcodec_avcodec_find_decoder" >&5
-$as_echo "$ac_cv_lib_avcodec_avcodec_find_decoder" >&6; }
-if test "x$ac_cv_lib_avcodec_avcodec_find_decoder" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_avcodec_avcodec_send_packet" >&5
+$as_echo "$ac_cv_lib_avcodec_avcodec_send_packet" >&6; }
+if test "x$ac_cv_lib_avcodec_avcodec_send_packet" = xyes; then :
 
 $as_echo "#define HAVE_FFMPEG 1" >>confdefs.h
 
@@ -15061,7 +15052,7 @@ test -z "$LIBAVCODEC_CFLAGS" || LIBAVCODEC_CFLAGS=`echo " $LIBAVCODEC_CFLAGS" | 
 test -z "$LIBAVCODEC_LIBS" || LIBAVCODEC_LIBS=`echo " $LIBAVCODEC_LIBS" | sed 's/ -L\([^/]\)/ -L\$(top_builddir)\/\1/g'`
 
 fi
-if test "x$ac_cv_lib_avcodec_avcodec_find_decoder" != xyes; then :
+if test "x$ac_cv_lib_avcodec_avcodec_send_packet" != xyes; then :
   case "x$with_libavcodec" in
   x)   as_fn_append wine_notices "|libavcodec ${notice_platform}development files not found (or too old), XAudio2 WMA conversion won't be supported." ;;
   xno) ;;
