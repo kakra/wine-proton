@@ -92,6 +92,7 @@ struct thread
     struct timeout_user   *exit_poll;     /* poll if the thread/process has exited already */
     int                    shm_fd;        /* file descriptor for thread local shared memory */
     shmlocal_t            *shm;           /* thread local shared memory pointer */
+    int                    esync_fd;      /* esync file descriptor (signalled on exit) */
 };
 
 struct thread_snapshot
