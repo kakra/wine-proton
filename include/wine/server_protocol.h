@@ -5716,7 +5716,7 @@ struct get_esync_fd_reply
 {
     struct reply_header __header;
     int          type;
-    char __pad_12[4];
+    unsigned int shm_idx;
 };
 
 enum esync_type
