@@ -93,6 +93,7 @@ struct thread
     int                    shm_fd;        /* file descriptor for thread local shared memory */
     shmlocal_t            *shm;           /* thread local shared memory pointer */
     int                    esync_fd;      /* esync file descriptor (signalled on exit) */
+    int                    esync_apc_fd;  /* esync apc fd (signalled when APCs are present) */
 };
 
 struct thread_snapshot
