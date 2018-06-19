@@ -36,6 +36,7 @@ static char *crash_log;
 
 int msgbox_res_id(HWND hwnd, UINT textid, UINT captionid, UINT type)
 {
+#if 0
     if (DBG_IVAR(ShowCrashDialog))
     {
         WCHAR caption[256];
@@ -44,6 +45,7 @@ int msgbox_res_id(HWND hwnd, UINT textid, UINT captionid, UINT type)
         LoadStringW(GetModuleHandleW(NULL), textid, text, ARRAY_SIZE(text));
         return MessageBoxW(hwnd, text, caption, type);
     }
+#endif
 
     return IDCANCEL;
 }
