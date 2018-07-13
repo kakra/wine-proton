@@ -81,6 +81,7 @@ static void (*pvkDestroyInstance)(VkInstance, const VkAllocationCallbacks *);
 static void (*pvkDestroySurfaceKHR)(VkInstance, VkSurfaceKHR, const VkAllocationCallbacks *);
 static void (*pvkDestroySwapchainKHR)(VkDevice, VkSwapchainKHR, const VkAllocationCallbacks *);
 static VkResult (*pvkEnumerateInstanceExtensionProperties)(const char *, uint32_t *, VkExtensionProperties *);
+static VkResult (*pvkEnumerateInstanceVersion)(uint32_t *);
 static VkResult (*pvkGetDeviceGroupSurfacePresentModesKHR)(VkDevice, VkSurfaceKHR, VkDeviceGroupPresentModeFlagsKHR *);
 static void * (*pvkGetDeviceProcAddr)(VkDevice, const char *);
 static void * (*pvkGetInstanceProcAddr)(VkInstance, const char *);
@@ -129,6 +130,7 @@ static BOOL WINAPI wine_vk_init(INIT_ONCE *once, void *param, void **context)
     LOAD_FUNCPTR(vkGetPhysicalDeviceXlibPresentationSupportKHR)
     LOAD_FUNCPTR(vkGetSwapchainImagesKHR)
     LOAD_FUNCPTR(vkQueuePresentKHR)
+    LOAD_OPTIONAL_FUNCPTR(vkEnumerateInstanceVersion)
     LOAD_OPTIONAL_FUNCPTR(vkGetDeviceGroupSurfacePresentModesKHR)
     LOAD_OPTIONAL_FUNCPTR(vkGetPhysicalDevicePresentRectanglesKHR)
 #undef LOAD_FUNCPTR
@@ -412,6 +414,19 @@ static VkResult X11DRV_vkEnumerateInstanceExtensionProperties(const char *layer_
     return res;
 }
 
+static VkResult X11DRV_vkEnumerateInstanceVersion(uint32_t *version)
+{
+    TRACE("%p\n", version);
+
+    if (!pvkEnumerateInstanceVersion)
+    {
+        *version = VK_API_VERSION_1_0;
+        return VK_SUCCESS;
+    }
+
+    return pvkEnumerateInstanceVersion(version);
+}
+
 static VkResult X11DRV_vkGetDeviceGroupSurfacePresentModesKHR(VkDevice device,
         VkSurfaceKHR surface, VkDeviceGroupPresentModeFlagsKHR *flags)
 {
@@ -553,6 +568,7 @@ static const struct vulkan_funcs vulkan_funcs =
     X11DRV_vkDestroySurfaceKHR,
     X11DRV_vkDestroySwapchainKHR,
     X11DRV_vkEnumerateInstanceExtensionProperties,
+    X11DRV_vkEnumerateInstanceVersion,
     X11DRV_vkGetDeviceGroupSurfacePresentModesKHR,
     X11DRV_vkGetDeviceProcAddr,
     X11DRV_vkGetInstanceProcAddr,
