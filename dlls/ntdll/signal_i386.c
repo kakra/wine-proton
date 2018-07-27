@@ -2531,6 +2531,7 @@ __ASM_STDCALL_FUNC( RtlUnwind, 16,
                     __ASM_CFI(".cfi_same_value %ebp\n\t")
                     "ret $16" )  /* actually never returns */
 
+NTSTATUS WINAPI __syscall_NtContinue( CONTEXT *context, BOOLEAN alert );
 
 /*******************************************************************
  *		NtRaiseException (NTDLL.@)
@@ -2538,7 +2539,7 @@ __ASM_STDCALL_FUNC( RtlUnwind, 16,
 NTSTATUS WINAPI NtRaiseException( EXCEPTION_RECORD *rec, CONTEXT *context, BOOL first_chance )
 {
     NTSTATUS status = raise_exception( rec, context, first_chance );
-    if (status == STATUS_SUCCESS) NtSetContextThread( GetCurrentThread(), context );
+    if (status == STATUS_SUCCESS) __syscall_NtContinue(context, FALSE);
     return status;
 }
 
