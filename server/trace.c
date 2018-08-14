@@ -4593,6 +4593,11 @@ static void dump_get_esync_apc_fd_request( const struct get_esync_apc_fd_request
 {
 }
 
+static void dump_esync_msgwait_request( const struct esync_msgwait_request *req )
+{
+    fprintf( stderr, " in_msgwait=%d", req->in_msgwait );
+}
+
 static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_new_process_request,
     (dump_func)dump_exec_process_request,
@@ -4889,6 +4894,7 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_open_esync_request,
     (dump_func)dump_get_esync_fd_request,
     (dump_func)dump_get_esync_apc_fd_request,
+    (dump_func)dump_esync_msgwait_request,
 };
 
 static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
@@ -5186,6 +5192,7 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_create_esync_reply,
     (dump_func)dump_open_esync_reply,
     (dump_func)dump_get_esync_fd_reply,
+    NULL,
     NULL,
 };
 
@@ -5485,6 +5492,7 @@ static const char * const req_names[REQ_NB_REQUESTS] = {
     "open_esync",
     "get_esync_fd",
     "get_esync_apc_fd",
+    "esync_msgwait",
 };
 
 static const struct
