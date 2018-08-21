@@ -792,8 +792,22 @@ static void focus_out( Display *display , HWND hwnd )
     Window focus_win;
     int revert;
     XIC xic;
+    struct x11drv_win_data *data;
 
     if (ximInComposeMode) return;
+
+    data = get_win_data(hwnd);
+    if(data){
+        if(data->take_focus_back){
+            data->take_focus_back = FALSE;
+            TRACE("workaround mutter bug, taking focus back\n");
+            XSetInputFocus( data->display, data->whole_window, RevertToParent, CurrentTime);
+            release_win_data(data);
+            /* don't inform win32 client */
+            return;
+        }
+        release_win_data(data);
+    }
 
     x11drv_thread_data()->last_focus = hwnd;
     if ((xic = X11DRV_get_ic( hwnd ))) XUnsetICFocus( xic );
@@ -1059,6 +1073,9 @@ static BOOL X11DRV_ConfigureNotify( HWND hwnd, XEvent *xev )
     }
 
     /* Get geometry */
+
+    /* fullscreening is done now, so stop avoiding focus loss */
+    data->take_focus_back = FALSE;
 
     parent = GetAncestor( hwnd, GA_PARENT );
     root_coords = event->send_event;  /* synthetic events are always in root coords */
