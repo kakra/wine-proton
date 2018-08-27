@@ -1111,6 +1111,11 @@ static DWORD WINAPI pulse_timer_cb(void *user)
         if(err == 0){
             TRACE("got now: %s, last time: %s\n", wine_dbgstr_longlong(now), wine_dbgstr_longlong(This->last_time));
             if(This->started && (This->dataflow == eCapture || This->held_bytes)){
+                if(This->just_underran){
+                    This->last_time = now;
+                    This->just_started = TRUE;
+                }
+
                 if(This->just_started){
                     /* let it play out a period to absorb some latency and get accurate timing */
                     pa_usec_t diff = now - This->last_time;
