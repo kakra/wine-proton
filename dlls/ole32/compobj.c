@@ -3311,16 +3311,22 @@ HRESULT WINAPI DECLSPEC_HOTPATCH CoCreateInstanceEx(
 
     init_multi_qi(cmq, pResults, E_NOINTERFACE);
 
+    if (!(apt = apartment_get_current_or_mta()))
+    {
+        WARN("apartment not initialised; initializing now\n");
+        CoInitialize(NULL);
+
+        if (!(apt = apartment_get_current_or_mta()))
+        {
+            ERR("apartment still not initialised\n");
+            return CO_E_NOTINITIALIZED;
+        }
+    }
+    apartment_release(apt);
+
     hres = CoGetTreatAsClass(rclsid, &clsid);
     if(FAILED(hres))
         clsid = *rclsid;
-
-    if (!(apt = apartment_get_current_or_mta()))
-    {
-        ERR("apartment not initialised\n");
-        return CO_E_NOTINITIALIZED;
-    }
-    apartment_release(apt);
 
     /*
      * The Standard Global Interface Table (GIT) object is a process-wide singleton.
