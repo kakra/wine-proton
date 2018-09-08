@@ -1746,6 +1746,7 @@ BOOL WINAPI ReplaceFileW(LPCWSTR lpReplacedFileName, LPCWSTR lpReplacementFileNa
     NTSTATUS status;
     IO_STATUS_BLOCK io;
     OBJECT_ATTRIBUTES attr;
+    BY_HANDLE_FILE_INFORMATION file_info;
 
     TRACE("%s %s %s 0x%08x %p %p\n", debugstr_w(lpReplacedFileName),
           debugstr_w(lpReplacementFileName), debugstr_w(lpBackupFileName),
@@ -1780,7 +1781,7 @@ BOOL WINAPI ReplaceFileW(LPCWSTR lpReplacedFileName, LPCWSTR lpReplacementFileNa
     }
     replaced_flags = lpBackupFileName ? FILE_OPEN : FILE_OPEN_IF;
     attr.ObjectName = &nt_replaced_name;
-    status = NtOpenFile(&hReplaced, GENERIC_READ|GENERIC_WRITE|DELETE|SYNCHRONIZE,
+    status = NtOpenFile(&hReplaced, GENERIC_READ|DELETE|SYNCHRONIZE,
                         &attr, &io,
                         FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
                         FILE_SYNCHRONOUS_IO_NONALERT|FILE_NON_DIRECTORY_FILE);
@@ -1793,6 +1794,19 @@ BOOL WINAPI ReplaceFileW(LPCWSTR lpReplacedFileName, LPCWSTR lpReplacementFileNa
             error = ERROR_FILE_NOT_FOUND;
         else
             error = ERROR_UNABLE_TO_REMOVE_REPLACED;
+        goto fail;
+    }
+
+    /* Replacement should fail if replaced is READ_ONLY */
+    if (!GetFileInformationByHandle(hReplaced, &file_info))
+    {
+	    error = GetLastError();
+	    goto fail;
+    }
+
+    if (file_info.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+    {
+        error = ERROR_ACCESS_DENIED;
         goto fail;
     }
 
@@ -1816,6 +1830,19 @@ BOOL WINAPI ReplaceFileW(LPCWSTR lpReplacedFileName, LPCWSTR lpReplacementFileNa
     if (status != STATUS_SUCCESS)
     {
         error = RtlNtStatusToDosError(status);
+        goto fail;
+    }
+
+    /* Replacement should fail if replacement is READ_ONLY */
+    if (!GetFileInformationByHandle(hReplacement, &file_info))
+    {
+	    error = GetLastError();
+	    goto fail;
+    }
+
+    if (file_info.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
+    {
+        error = ERROR_ACCESS_DENIED;
         goto fail;
     }
 
