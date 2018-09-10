@@ -18,6 +18,7 @@ C_SRCS = \
 	joystick_linuxinput.c \
 	joystick_sdl.c \
 	joystick_osx.c \
+	joystick_sdl.c \
 	keyboard.c \
 	mouse.c
 
