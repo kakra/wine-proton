@@ -319,6 +319,7 @@
 @ cdecl wined3d_access_gl_texture(ptr ptr ptr long)
 @ cdecl wined3d_device_run_cs_callback(ptr ptr ptr long)
 @ cdecl wined3d_device_wait_idle(ptr)
+@ cdecl wined3d_get_gl_texture(ptr)
 
 @ cdecl wined3d_dxt1_decode(ptr ptr long long long long long)
 @ cdecl wined3d_dxt1_encode(ptr ptr long long long long long)
