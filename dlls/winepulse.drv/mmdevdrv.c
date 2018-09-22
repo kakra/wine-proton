@@ -444,8 +444,11 @@ static void pulse_probe_settings(pa_mainloop *ml, pa_context *ctx, int render, W
     if (stream)
         pa_stream_unref(stream);
 
-    if (length)
+    if (length) {
         pulse_def_period[!render] = pulse_min_period[!render] = pa_bytes_to_usec(10 * length, &ss);
+        TRACE("pulse_{def,min}_period [%i]: %" PRIu64 "\n",
+                !render, pulse_min_period[!render]);
+    }
 
     if (pulse_min_period[!render] < MinimumPeriod)
         pulse_min_period[!render] = MinimumPeriod;
@@ -470,6 +473,9 @@ static void pulse_probe_settings(pa_mainloop *ml, pa_context *ctx, int render, W
         fmt->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
 
     fmt->dwChannelMask = pulse_channel_map_to_channel_mask(&map);
+
+    TRACE("selected sampling format: { .rate=%u, .format=%i, .channels=%i }\n",
+        ss.rate, ss.format, ss.channels);
 }
 
 typedef struct tagLANGANDCODEPAGE
