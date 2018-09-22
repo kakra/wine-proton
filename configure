@@ -804,7 +804,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -899,6 +898,7 @@ enable_adsldp
 enable_adsldpc
 enable_advapi32
 enable_advpack
+enable_amd_ags_x64
 enable_amstream
 enable_api_ms_win_appmodel_identity_l1_1_0
 enable_api_ms_win_appmodel_runtime_l1_1_1
@@ -1245,6 +1245,7 @@ enable_dpnlobby
 enable_dpvoice
 enable_dpwsockx
 enable_drmclien
+enable_dsdmo
 enable_dsound
 enable_dsquery
 enable_dssenh
@@ -1261,6 +1262,7 @@ enable_dxva2
 enable_esent
 enable_evr
 enable_explorerframe
+enable_ext_ms_win_appmodel_usercontext_l1_1_0
 enable_ext_ms_win_authz_context_l1_1_0
 enable_ext_ms_win_domainjoin_netjoin_l1_1_0
 enable_ext_ms_win_dwmapi_ext_l1_1_0
@@ -1300,6 +1302,7 @@ enable_ext_ms_win_rtcore_ntuser_sysparams_l1_1_0
 enable_ext_ms_win_security_credui_l1_1_0
 enable_ext_ms_win_security_cryptui_l1_1_0
 enable_ext_ms_win_uxtheme_themes_l1_1_0
+enable_ext_ms_win_xaml_pal_l1_1_0
 enable_faultrep
 enable_feclient
 enable_fltlib
@@ -1325,6 +1328,7 @@ enable_iccvid
 enable_icmp
 enable_ieframe
 enable_ieproxy
+enable_iertutil
 enable_imaadp32_acm
 enable_imagehlp
 enable_imm32
@@ -1340,6 +1344,7 @@ enable_iprop
 enable_irprops_cpl
 enable_itircl
 enable_itss
+enable_iyuv_32
 enable_joy_cpl
 enable_jscript
 enable_jsproxy
@@ -1484,6 +1489,7 @@ enable_prntvpt
 enable_propsys
 enable_psapi
 enable_pstorec
+enable_qasf
 enable_qcap
 enable_qedit
 enable_qmgr
@@ -1757,7 +1763,6 @@ enable_wineconsole
 enable_winedbg
 enable_winedevice
 enable_winefile
-enable_winemenubuilder
 enable_winemine
 enable_winemsibuilder
 enable_winepath
@@ -1891,7 +1896,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -2144,15 +2148,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -2290,7 +2285,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -2443,7 +2438,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -6821,7 +6815,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -6867,7 +6861,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -6891,7 +6885,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -6936,7 +6930,7 @@ else
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -6960,7 +6954,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     We can't simply define LARGE_OFF_T to be 9223372036854775807,
     since some C++ compilers masquerading as C compilers
     incorrectly reject 9223372036854775807.  */
-#define LARGE_OFF_T ((((off_t) 1 << 31) << 31) - 1 + (((off_t) 1 << 31) << 31))
+#define LARGE_OFF_T (((off_t) 1 << 62) - 1 + ((off_t) 1 << 62))
   int off_t_is_large[(LARGE_OFF_T % 2147483629 == 721
 		       && LARGE_OFF_T % 2147483647 == 1)
 		      ? 1 : -1];
@@ -18848,6 +18842,39 @@ $as_echo "#define HAVE___BUILTIN_CLZ 1" >>confdefs.h
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_ctzl" >&5
+$as_echo_n "checking for __builtin_ctzl... " >&6; }
+if ${ac_cv_have___builtin_ctzl+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return __builtin_ctzl(1)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_have___builtin_ctzl="yes"
+else
+  ac_cv_have___builtin_ctzl="no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have___builtin_ctzl" >&5
+$as_echo "$ac_cv_have___builtin_ctzl" >&6; }
+if test "$ac_cv_have___builtin_ctzl" = "yes"
+then
+
+$as_echo "#define HAVE___BUILTIN_CTZL 1" >>confdefs.h
+
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_popcount" >&5
 $as_echo_n "checking for __builtin_popcount... " >&6; }
 if ${ac_cv_have___builtin_popcount+:} false; then :
@@ -19293,6 +19320,7 @@ wine_fn_config_makefile dlls/advapi32 enable_advapi32
 wine_fn_config_makefile dlls/advapi32/tests enable_tests
 wine_fn_config_makefile dlls/advpack enable_advpack
 wine_fn_config_makefile dlls/advpack/tests enable_tests
+wine_fn_config_makefile dlls/amd_ags_x64 enable_amd_ags_x64
 wine_fn_config_makefile dlls/amstream enable_amstream
 wine_fn_config_makefile dlls/amstream/tests enable_tests
 wine_fn_config_makefile dlls/api-ms-win-appmodel-identity-l1-1-0 enable_api_ms_win_appmodel_identity_l1_1_0
@@ -19699,6 +19727,7 @@ wine_fn_config_makefile dlls/dpvoice enable_dpvoice
 wine_fn_config_makefile dlls/dpvoice/tests enable_tests
 wine_fn_config_makefile dlls/dpwsockx enable_dpwsockx
 wine_fn_config_makefile dlls/drmclien enable_drmclien
+wine_fn_config_makefile dlls/dsdmo enable_dsdmo
 wine_fn_config_makefile dlls/dsound enable_dsound
 wine_fn_config_makefile dlls/dsound/tests enable_tests
 wine_fn_config_makefile dlls/dsquery enable_dsquery
@@ -19723,6 +19752,7 @@ wine_fn_config_makefile dlls/evr enable_evr
 wine_fn_config_makefile dlls/evr/tests enable_tests
 wine_fn_config_makefile dlls/explorerframe enable_explorerframe
 wine_fn_config_makefile dlls/explorerframe/tests enable_tests
+wine_fn_config_makefile dlls/ext-ms-win-appmodel-usercontext-l1-1-0 enable_ext_ms_win_appmodel_usercontext_l1_1_0
 wine_fn_config_makefile dlls/ext-ms-win-authz-context-l1-1-0 enable_ext_ms_win_authz_context_l1_1_0
 wine_fn_config_makefile dlls/ext-ms-win-domainjoin-netjoin-l1-1-0 enable_ext_ms_win_domainjoin_netjoin_l1_1_0
 wine_fn_config_makefile dlls/ext-ms-win-dwmapi-ext-l1-1-0 enable_ext_ms_win_dwmapi_ext_l1_1_0
@@ -19762,6 +19792,7 @@ wine_fn_config_makefile dlls/ext-ms-win-rtcore-ntuser-sysparams-l1-1-0 enable_ex
 wine_fn_config_makefile dlls/ext-ms-win-security-credui-l1-1-0 enable_ext_ms_win_security_credui_l1_1_0
 wine_fn_config_makefile dlls/ext-ms-win-security-cryptui-l1-1-0 enable_ext_ms_win_security_cryptui_l1_1_0
 wine_fn_config_makefile dlls/ext-ms-win-uxtheme-themes-l1-1-0 enable_ext_ms_win_uxtheme_themes_l1_1_0
+wine_fn_config_makefile dlls/ext-ms-win-xaml-pal-l1-1-0 enable_ext_ms_win_xaml_pal_l1_1_0
 wine_fn_config_makefile dlls/faultrep enable_faultrep
 wine_fn_config_makefile dlls/faultrep/tests enable_tests
 wine_fn_config_makefile dlls/feclient enable_feclient
@@ -19798,6 +19829,7 @@ wine_fn_config_makefile dlls/icmp enable_icmp
 wine_fn_config_makefile dlls/ieframe enable_ieframe
 wine_fn_config_makefile dlls/ieframe/tests enable_tests
 wine_fn_config_makefile dlls/ieproxy enable_ieproxy
+wine_fn_config_makefile dlls/iertutil enable_iertutil
 wine_fn_config_makefile dlls/ifsmgr.vxd enable_win16
 wine_fn_config_makefile dlls/imaadp32.acm enable_imaadp32_acm
 wine_fn_config_makefile dlls/imagehlp enable_imagehlp
@@ -19822,6 +19854,7 @@ wine_fn_config_makefile dlls/irprops.cpl enable_irprops_cpl
 wine_fn_config_makefile dlls/itircl enable_itircl
 wine_fn_config_makefile dlls/itss enable_itss
 wine_fn_config_makefile dlls/itss/tests enable_tests
+wine_fn_config_makefile dlls/iyuv_32 enable_iyuv_32
 wine_fn_config_makefile dlls/joy.cpl enable_joy_cpl
 wine_fn_config_makefile dlls/jscript enable_jscript
 wine_fn_config_makefile dlls/jscript/tests enable_tests
@@ -20002,6 +20035,7 @@ wine_fn_config_makefile dlls/odbc32 enable_odbc32
 wine_fn_config_makefile dlls/odbccp32 enable_odbccp32
 wine_fn_config_makefile dlls/odbccp32/tests enable_tests
 wine_fn_config_makefile dlls/odbccu32 enable_odbccu32
+wine_fn_config_makefile dlls/odbcinst.dll16 enable_win16
 wine_fn_config_makefile dlls/ole2.dll16 enable_win16
 wine_fn_config_makefile dlls/ole2conv.dll16 enable_win16
 wine_fn_config_makefile dlls/ole2disp.dll16 enable_win16
@@ -20045,6 +20079,7 @@ wine_fn_config_makefile dlls/psapi enable_psapi
 wine_fn_config_makefile dlls/psapi/tests enable_tests
 wine_fn_config_makefile dlls/pstorec enable_pstorec
 wine_fn_config_makefile dlls/pstorec/tests enable_tests
+wine_fn_config_makefile dlls/qasf enable_qasf
 wine_fn_config_makefile dlls/qcap enable_qcap
 wine_fn_config_makefile dlls/qcap/tests enable_tests
 wine_fn_config_makefile dlls/qedit enable_qedit
@@ -20420,7 +20455,6 @@ wine_fn_config_makefile programs/wineconsole enable_wineconsole
 wine_fn_config_makefile programs/winedbg enable_winedbg
 wine_fn_config_makefile programs/winedevice enable_winedevice
 wine_fn_config_makefile programs/winefile enable_winefile
-wine_fn_config_makefile programs/winemenubuilder enable_winemenubuilder
 wine_fn_config_makefile programs/winemine enable_winemine
 wine_fn_config_makefile programs/winemsibuilder enable_winemsibuilder
 wine_fn_config_makefile programs/winepath enable_winepath
