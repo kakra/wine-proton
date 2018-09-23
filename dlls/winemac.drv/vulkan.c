@@ -63,6 +63,7 @@ typedef struct VkMacOSSurfaceCreateInfoMVK
     const void *pView; /* NSView */
 } VkMacOSSurfaceCreateInfoMVK;
 
+static VkResult (*pvkAcquireNextImageKHR)(VkDevice, VkSwapchainKHR, uint64_t, VkSemaphore, VkFence, uint32_t *);
 static VkResult (*pvkCreateInstance)(const VkInstanceCreateInfo *, const VkAllocationCallbacks *, VkInstance *);
 static VkResult (*pvkCreateSwapchainKHR)(VkDevice, const VkSwapchainCreateInfoKHR *, const VkAllocationCallbacks *, VkSwapchainKHR *);
 static VkResult (*pvkCreateMacOSSurfaceMVK)(VkInstance, const VkMacOSSurfaceCreateInfoMVK*, const VkAllocationCallbacks *, VkSurfaceKHR *);
@@ -98,6 +99,7 @@ static BOOL WINAPI wine_vk_init(INIT_ONCE *once, void *param, void **context)
     }
 
 #define LOAD_FUNCPTR(f) if ((p##f = wine_dlsym(vulkan_handle, #f, NULL, 0)) == NULL) goto fail;
+    LOAD_FUNCPTR(vkAcquireNextImageKHR)
     LOAD_FUNCPTR(vkCreateInstance)
     LOAD_FUNCPTR(vkCreateSwapchainKHR)
     LOAD_FUNCPTR(vkCreateMacOSSurfaceMVK)
@@ -186,6 +188,16 @@ static void wine_vk_surface_destroy(VkInstance instance, struct wine_vk_surface 
         macdrv_release_metal_device(surface->device);
 
     heap_free(surface);
+}
+
+static VkResult macdrv_vkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain,
+        uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t *index)
+{
+    TRACE("%p, 0x%s, 0x%s, 0x%s, 0x%s, %p\n", device,
+            wine_dbgstr_longlong(swapchain), wine_dbgstr_longlong(timeout),
+            wine_dbgstr_longlong(semaphore), wine_dbgstr_longlong(fence), index);
+
+    return pvkAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, index);
 }
 
 static VkResult macdrv_vkCreateInstance(const VkInstanceCreateInfo *create_info,
@@ -468,6 +480,7 @@ static VkResult macdrv_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *
 
 static const struct vulkan_funcs vulkan_funcs =
 {
+    macdrv_vkAcquireNextImageKHR,
     macdrv_vkCreateInstance,
     macdrv_vkCreateSwapchainKHR,
     macdrv_vkCreateWin32SurfaceKHR,
