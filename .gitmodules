@@ -1,0 +1,3 @@
+[submodule "vendor/vkd3d"]
+	path = vendor/vkd3d
+	url = https://github.com/kakra/vkd3d.git
