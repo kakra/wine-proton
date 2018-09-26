@@ -1034,7 +1034,7 @@ static inline BOOL experimental_SHARED_MEMORY( void )
     if (enabled == -1)
     {
         const char *str = getenv( "STAGING_SHARED_MEMORY" );
-        enabled = str && (atoi(str) != 0);
+        enabled = !str || (atoi(str) != 0);
     }
     return enabled;
 }
