@@ -1,6 +1,6 @@
 -include Makefile
 
-PROTON_DIST := "proton_dist-$(shell git describe)"
+PROTON_DIST := "dist-$(shell git describe --tag)"
 
 CCFLAGS := -O3 -march=native -fomit-frame-pointer
 
