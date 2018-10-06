@@ -7,3 +7,6 @@
 [submodule "vendor/vkd3d"]
 	path = vendor/vkd3d
 	url = https://github.com/kakra/vkd3d.git
+[submodule "vendor/dxvk"]
+	path = vendor/dxvk
+	url = https://github.com/kakra/dxvk.git
