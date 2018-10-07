@@ -83,6 +83,7 @@ struct thread
     client_ptr_t           entry_point;   /* entry point (in client address space) */
     affinity_t             affinity;      /* affinity mask */
     int                    priority;      /* priority level */
+    int                    mmcss_priority;  /* MMCSS priority level */
     int                    suspend;       /* suspend count */
     obj_handle_t           desktop;       /* desktop handle */
     int                    desktop_users; /* number of objects using the thread desktop */
