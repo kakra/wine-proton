@@ -1433,6 +1433,12 @@ static void dump_set_thread_info_request( const struct set_thread_info_request *
     fprintf( stderr, ", token=%04x", req->token );
 }
 
+static void dump_set_thread_mmcss_priority_request( const struct set_thread_mmcss_priority_request *req )
+{
+    fprintf( stderr, " handle=%04x", req->handle );
+    fprintf( stderr, ", mmcss_priority=%d", req->mmcss_priority );
+}
+
 static void dump_get_dll_info_request( const struct get_dll_info_request *req )
 {
     fprintf( stderr, " handle=%04x", req->handle );
@@ -4630,6 +4636,7 @@ static const dump_func req_dumpers[REQ_NB_REQUESTS] = {
     (dump_func)dump_get_thread_info_request,
     (dump_func)dump_get_thread_times_request,
     (dump_func)dump_set_thread_info_request,
+    (dump_func)dump_set_thread_mmcss_priority_request,
     (dump_func)dump_get_dll_info_request,
     (dump_func)dump_suspend_thread_request,
     (dump_func)dump_resume_thread_request,
@@ -4930,6 +4937,7 @@ static const dump_func reply_dumpers[REQ_NB_REQUESTS] = {
     NULL,
     (dump_func)dump_get_thread_info_reply,
     (dump_func)dump_get_thread_times_reply,
+    NULL,
     NULL,
     (dump_func)dump_get_dll_info_reply,
     (dump_func)dump_suspend_thread_reply,
@@ -5232,6 +5240,7 @@ static const char * const req_names[REQ_NB_REQUESTS] = {
     "get_thread_info",
     "get_thread_times",
     "set_thread_info",
+    "set_thread_mmcss_priority",
     "get_dll_info",
     "suspend_thread",
     "resume_thread",
