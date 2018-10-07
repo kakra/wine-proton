@@ -200,6 +200,7 @@ static inline void init_thread_structure( struct thread *thread )
     thread->state           = RUNNING;
     thread->exit_code       = 0;
     thread->priority        = 0;
+    thread->mmcss_priority  = 0;
     thread->suspend         = 0;
     thread->desktop_users   = 0;
     thread->token           = NULL;
@@ -569,6 +570,19 @@ static void set_thread_info( struct thread *thread,
         security_set_thread_token( thread, req->token );
     if (req->mask & SET_THREAD_INFO_ENTRYPOINT)
         thread->entry_point = req->entry_point;
+}
+
+/* set MMCSS priority of a thread */
+static void set_thread_mmcss_priority( struct thread *thread,
+                                       const struct set_thread_mmcss_priority_request *req )
+{
+    if ((req->mmcss_priority >= 0) && (req->mmcss_priority <= 26))
+    {
+        thread->mmcss_priority = req->mmcss_priority;
+        set_scheduler_priority( thread );
+    }
+    else
+        set_error( STATUS_INVALID_PARAMETER );
 }
 
 /* stop a thread (at the Unix level) */
@@ -1552,6 +1566,17 @@ DECL_HANDLER(set_thread_info)
     if ((thread = get_thread_from_handle( req->handle, THREAD_SET_INFORMATION )))
     {
         set_thread_info( thread, req );
+        release_object( thread );
+    }
+}
+
+/* set MMCSS priority of a thread */
+DECL_HANDLER(set_thread_mmcss_priority)
+{
+    struct thread *thread;
+    if ((thread = get_thread_from_handle( req->handle, THREAD_SET_INFORMATION )))
+    {
+        set_thread_mmcss_priority( thread, req );
         release_object( thread );
     }
 }
