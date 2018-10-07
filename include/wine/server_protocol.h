@@ -1021,6 +1021,19 @@ struct set_thread_info_reply
 #define SET_THREAD_INFO_ENTRYPOINT 0x08
 
 
+struct set_thread_mmcss_priority_request
+{
+    struct request_header __header;
+    obj_handle_t handle;
+    int          mmcss_priority;
+    char __pad_20[4];
+};
+struct set_thread_mmcss_priority_reply
+{
+    struct reply_header __header;
+};
+
+
 
 struct get_dll_info_request
 {
@@ -5812,6 +5825,7 @@ enum request
     REQ_get_thread_info,
     REQ_get_thread_times,
     REQ_set_thread_info,
+    REQ_set_thread_mmcss_priority,
     REQ_get_dll_info,
     REQ_suspend_thread,
     REQ_resume_thread,
@@ -6117,6 +6131,7 @@ union generic_request
     struct get_thread_info_request get_thread_info_request;
     struct get_thread_times_request get_thread_times_request;
     struct set_thread_info_request set_thread_info_request;
+    struct set_thread_mmcss_priority_request set_thread_mmcss_priority_request;
     struct get_dll_info_request get_dll_info_request;
     struct suspend_thread_request suspend_thread_request;
     struct resume_thread_request resume_thread_request;
@@ -6420,6 +6435,7 @@ union generic_reply
     struct get_thread_info_reply get_thread_info_reply;
     struct get_thread_times_reply get_thread_times_reply;
     struct set_thread_info_reply set_thread_info_reply;
+    struct set_thread_mmcss_priority_reply set_thread_mmcss_priority_reply;
     struct get_dll_info_reply get_dll_info_reply;
     struct suspend_thread_reply suspend_thread_reply;
     struct resume_thread_reply resume_thread_reply;
@@ -6705,6 +6721,6 @@ union generic_reply
     struct esync_msgwait_reply esync_msgwait_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 580
+#define SERVER_PROTOCOL_VERSION 581
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */

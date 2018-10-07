@@ -947,6 +947,13 @@ struct rawinput_device
 #define SET_THREAD_INFO_ENTRYPOINT 0x08
 
 
+/* Set the MMCSS priority eventually overriding default priority behavior */
+@REQ(set_thread_mmcss_priority)
+    obj_handle_t handle;          /* thread handle */
+    int          mmcss_priority;  /* MMCSS priority */
+@END
+
+
 /* Retrieve information about a module */
 @REQ(get_dll_info)
     obj_handle_t handle;       /* process handle */
