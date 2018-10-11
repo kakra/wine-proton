@@ -31,6 +31,9 @@
 #ifdef HAVE_SYS_PRCTL_H
 # include <sys/prctl.h>
 #endif
+#ifdef HAVE_SCHED_H
+# include <sched.h>
+#endif
 
 #include "ntstatus.h"
 #define WIN32_NO_STATUS
@@ -598,7 +601,7 @@ DWORD_PTR WINAPI SetThreadAffinityMask( HANDLE hThread, DWORD_PTR dwThreadAffini
  */
 BOOL WINAPI SetThreadIdealProcessorEx(HANDLE thread, PROCESSOR_NUMBER *processor, PROCESSOR_NUMBER *previous)
 {
-    FIXME("(%p, %p, %p): stub\n", thread, processor, previous);
+    FIXME("(%p, %p)->(%p)\n", thread, processor, previous);
 
     if (!processor || processor->Group > 0 || processor->Number > MAXIMUM_PROCESSORS)
     {
@@ -609,9 +612,14 @@ BOOL WINAPI SetThreadIdealProcessorEx(HANDLE thread, PROCESSOR_NUMBER *processor
     if (previous)
     {
         previous->Group = 0;
-        previous->Number = 0;
+        previous->Number = SetThreadIdealProcessor(thread, MAXIMUM_PROCESSORS);
         previous->Reserved = 0;
+        if (previous->Number != 0)
+            return 0;
     }
+
+    if (SetThreadAffinityMask(thread, ((DWORD_PTR)1)<<processor->Number) == 0)
+        return FALSE;
 
     return TRUE;
 }
@@ -627,13 +635,36 @@ DWORD WINAPI SetThreadIdealProcessor(
     HANDLE hThread,          /* [in] Specifies the thread of interest */
     DWORD dwIdealProcessor)  /* [in] Specifies the new preferred processor */
 {
-    FIXME("(%p): stub\n",hThread);
+    struct _PROCESSOR_NUMBER ideal;
+
+    TRACE("(%p, %d)\n", hThread, dwIdealProcessor);
+
     if (dwIdealProcessor > MAXIMUM_PROCESSORS)
     {
         SetLastError(ERROR_INVALID_PARAMETER);
         return ~0u;
     }
-    return 0;
+
+    if (dwIdealProcessor == MAXIMUM_PROCESSORS)
+    {
+#ifdef HAVE_SCHED_H
+        static int once = 0;
+        if (!once++)
+            FIXME("(%p, %d) using sched_getcpu()\n", hThread, dwIdealProcessor);
+
+        int res = sched_getcpu();
+        if (res != -1)
+            return res;
+#endif
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return ~0u;
+    }
+
+    ideal.Group = 0;
+    ideal.Number = dwIdealProcessor;
+    ideal.Reserved = 0;
+
+    return SetThreadIdealProcessorEx(hThread, &ideal, &ideal) == 0 ? ~0u : ideal.Number;
 }
 
 /***********************************************************************
