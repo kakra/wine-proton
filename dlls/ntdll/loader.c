@@ -594,7 +594,7 @@ static FARPROC find_ordinal_export( HMODULE module, const IMAGE_EXPORT_DIRECTORY
     proc = get_rva( module, functions[ordinal] );
 
     /* if the address falls into the export dir, it's a forward */
-    if (((const char *)proc >= (const char *)exports) && 
+    if (((const char *)proc >= (const char *)exports) &&
         ((const char *)proc < (const char *)exports + exp_size))
         return find_forwarded_export( module, (const char *)proc, load_path );
 
@@ -1387,7 +1387,7 @@ static void process_detach(void)
     {
         for (entry = mark->Blink; entry != mark; entry = entry->Blink)
         {
-            mod = CONTAINING_RECORD(entry, LDR_MODULE, 
+            mod = CONTAINING_RECORD(entry, LDR_MODULE,
                                     InInitializationOrderModuleList);
             /* Check whether to detach this DLL */
             if ( !(mod->Flags & LDR_PROCESS_ATTACHED) )
@@ -1397,7 +1397,7 @@ static void process_detach(void)
 
             /* Call detach notification */
             mod->Flags &= ~LDR_PROCESS_ATTACHED;
-            MODULE_InitDLL( CONTAINING_RECORD(mod, WINE_MODREF, ldr), 
+            MODULE_InitDLL( CONTAINING_RECORD(mod, WINE_MODREF, ldr),
                             DLL_PROCESS_DETACH, ULongToPtr(process_detaching) );
             call_ldr_notifications( LDR_DLL_NOTIFICATION_REASON_UNLOADED, mod );
 
@@ -1423,7 +1423,7 @@ static void thread_attach(void)
     mark = &NtCurrentTeb()->Peb->LdrData->InInitializationOrderModuleList;
     for (entry = mark->Flink; entry != mark; entry = entry->Flink)
     {
-        mod = CONTAINING_RECORD(entry, LDR_MODULE, 
+        mod = CONTAINING_RECORD(entry, LDR_MODULE,
                                 InInitializationOrderModuleList);
         if ( !(mod->Flags & LDR_PROCESS_ATTACHED) )
             continue;
@@ -2076,6 +2076,127 @@ static BOOL is_valid_binary( HMODULE module, const pe_image_info_t *info )
 #else
     return FALSE;  /* no wow64 support on other platforms */
 #endif
+}
+
+/***************************************************************************
+ *	get_basename
+ *
+ * Return the base name of a file name (i.e. remove the path components).
+ */
+static const WCHAR *get_basename( const WCHAR *name )
+{
+    const WCHAR *ptr;
+
+    if (name[0] && name[1] == ':') name += 2;  /* strip drive specification */
+    if ((ptr = strrchrW( name, '\\' ))) name = ptr + 1;
+    if ((ptr = strrchrW( name, '/' ))) name = ptr + 1;
+    return name;
+}
+
+
+/***************************************************************************
+ *	large_address_aware_env
+ *
+ * Checks for override for LARGE_ADDRESS_AWARE bit in environment. Takes
+ * precedence over any AppDefaults registry entry.
+ *
+ * Returns:
+ *    -1 if not defined in environment (prefer registry entries)
+ *     0 if disabled
+ *     1 if enabled
+ */
+static int large_address_aware_env( void )
+{
+    static int large_address_aware_cached = -2;
+
+    if (large_address_aware_cached == -2) {
+        const char *envvar = getenv("WINE_LARGE_ADDRESS_AWARE");
+        if (envvar)
+            large_address_aware_cached = atoi(envvar);
+        else
+            large_address_aware_cached = -1;
+    }
+
+    return large_address_aware_cached;
+}
+
+/***************************************************************************
+ *	needs_override_large_address_aware
+ *
+ * Checks for AppDefaults override for LARGE_ADDRESS_AWARE bit.
+ *
+ * Returns:
+ *    TRUE  if override was found in the registry, or environment variable
+ *          explicitly enabled this override
+ *    FALSE if no override was found in the registry, or environment variable
+ *          explicitly disabled this override
+ */
+static BOOL needs_override_large_address_aware(const WCHAR *exename)
+{
+    BOOL result;
+    OBJECT_ATTRIBUTES attr;
+    UNICODE_STRING nameW;
+    UNICODE_STRING valueNameW;
+    HANDLE root;
+    WCHAR *str;
+    static const WCHAR AppDefaultsW[] = {'S','o','f','t','w','a','r','e','\\','W','i','n','e','\\',
+                                         'A','p','p','D','e','f','a','u','l','t','s','\\',0};
+    static const WCHAR LargeAddressAwareW[] = {'L','a','r','g','e','A','d','d','r','e','s','s','A','w','a','r','e',0};
+    char tmp[64];
+    KEY_VALUE_PARTIAL_INFORMATION *info = (KEY_VALUE_PARTIAL_INFORMATION *)tmp;
+    DWORD count;
+    int env_override;
+    HANDLE app_key = (HANDLE)-1;
+
+    /* Environment variable takes precedence. */
+    env_override = large_address_aware_env();
+    if (large_address_aware_env() >= 0)
+        return env_override;
+
+    exename = get_basename(exename);
+
+    if (app_key != (HANDLE)-1) return FALSE;
+
+    str = RtlAllocateHeap( GetProcessHeap(), 0,
+                           sizeof(AppDefaultsW) + strlenW(exename) * sizeof(WCHAR) );
+    if (!str) return FALSE;
+    strcpyW( str, AppDefaultsW );
+    strcatW( str, exename );
+
+    RtlOpenCurrentUser( KEY_ALL_ACCESS, &root );
+    attr.Length = sizeof(attr);
+    attr.RootDirectory = root;
+    attr.ObjectName = &nameW;
+    attr.Attributes = 0;
+    attr.SecurityDescriptor = NULL;
+    attr.SecurityQualityOfService = NULL;
+    RtlInitUnicodeString( &nameW, str );
+    RtlInitUnicodeString( &valueNameW, LargeAddressAwareW );
+
+    result = FALSE;
+
+    /* @@ Wine registry key: HKCU\Software\Wine\AppDefaults\app.exe */
+    if (!NtOpenKey( &app_key, KEY_ALL_ACCESS, &attr ))
+    {
+        if (!NtQueryValueKey( app_key, &valueNameW, KeyValuePartialInformation, tmp, sizeof(tmp)-1, &count))
+        {
+            if (info->DataLength >= sizeof(DWORD))
+            {
+                if ((*(DWORD *)info->Data) != 0)
+                    result = TRUE;
+            }
+        }
+        NtClose( app_key );
+    }
+    NtClose( root );
+    RtlFreeHeap( GetProcessHeap(), 0, str );
+    return result;
+}
+
+BOOL CDECL __wine_needs_override_large_address_aware(void)
+{
+    PEB *peb = NtCurrentTeb()->Peb;
+    return needs_override_large_address_aware(peb->ProcessParameters->ImagePathName.Buffer);
 }
 
 
@@ -2863,7 +2984,7 @@ IMAGE_BASE_RELOCATION * WINAPI LdrProcessRelocationBlock( void *page, UINT count
  *		LdrQueryProcessModuleInformation
  *
  */
-NTSTATUS WINAPI LdrQueryProcessModuleInformation(PSYSTEM_MODULE_INFORMATION smi, 
+NTSTATUS WINAPI LdrQueryProcessModuleInformation(PSYSTEM_MODULE_INFORMATION smi,
                                                  ULONG buf_size, ULONG* req_size)
 {
     SYSTEM_MODULE*      sm = &smi->Modules[0];
@@ -3147,14 +3268,14 @@ void WINAPI LdrShutdownThread(void)
     mark = &NtCurrentTeb()->Peb->LdrData->InInitializationOrderModuleList;
     for (entry = mark->Blink; entry != mark; entry = entry->Blink)
     {
-        mod = CONTAINING_RECORD(entry, LDR_MODULE, 
+        mod = CONTAINING_RECORD(entry, LDR_MODULE,
                                 InInitializationOrderModuleList);
         if ( !(mod->Flags & LDR_PROCESS_ATTACHED) )
             continue;
         if ( mod->Flags & LDR_NO_DLL_CALLS )
             continue;
 
-        MODULE_InitDLL( CONTAINING_RECORD(mod, WINE_MODREF, ldr), 
+        MODULE_InitDLL( CONTAINING_RECORD(mod, WINE_MODREF, ldr),
                         DLL_THREAD_DETACH, NULL );
     }
 
@@ -3635,6 +3756,7 @@ void __wine_process_init(void)
     NTSTATUS status;
     ANSI_STRING func_name;
     UNICODE_STRING nt_name;
+    BOOL force_large_address_aware = FALSE;
     void * (CDECL *init_func)(void);
 
     thread_init();
@@ -3677,7 +3799,11 @@ void __wine_process_init(void)
     version_init( wm->ldr.FullDllName.Buffer );
     user_shared_data_init();
     hidden_exports_init( wm->ldr.FullDllName.Buffer );
-    virtual_set_large_address_space();
+
+    if (needs_override_large_address_aware(NtCurrentTeb()->Peb->ProcessParameters->ImagePathName.Buffer) > 0)
+        force_large_address_aware = TRUE;
+
+    virtual_set_large_address_space(force_large_address_aware);
 
     LdrQueryImageFileExecutionOptions( &wm->ldr.FullDllName, globalflagW, REG_DWORD,
                                        &NtCurrentTeb()->Peb->NtGlobalFlag, sizeof(DWORD), NULL );
