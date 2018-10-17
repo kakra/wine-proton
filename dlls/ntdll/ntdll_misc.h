@@ -129,24 +129,24 @@ extern void (WINAPI *kernel32_start_process)(LPTHREAD_START_ROUTINE,void*) DECLS
 #define GetCurrentThreadId()   (HandleToULong(NtCurrentTeb()->ClientId.UniqueThread))
 
 /* Device IO */
-extern NTSTATUS CDROM_DeviceIoControl(HANDLE hDevice, 
+extern NTSTATUS CDROM_DeviceIoControl(HANDLE hDevice,
                                       HANDLE hEvent, PIO_APC_ROUTINE UserApcRoutine,
-                                      PVOID UserApcContext, 
-                                      PIO_STATUS_BLOCK piosb, 
+                                      PVOID UserApcContext,
+                                      PIO_STATUS_BLOCK piosb,
                                       ULONG IoControlCode,
                                       LPVOID lpInBuffer, DWORD nInBufferSize,
                                       LPVOID lpOutBuffer, DWORD nOutBufferSize) DECLSPEC_HIDDEN;
-extern NTSTATUS COMM_DeviceIoControl(HANDLE hDevice, 
+extern NTSTATUS COMM_DeviceIoControl(HANDLE hDevice,
                                      HANDLE hEvent, PIO_APC_ROUTINE UserApcRoutine,
-                                     PVOID UserApcContext, 
-                                     PIO_STATUS_BLOCK piosb, 
+                                     PVOID UserApcContext,
+                                     PIO_STATUS_BLOCK piosb,
                                      ULONG IoControlCode,
                                      LPVOID lpInBuffer, DWORD nInBufferSize,
                                      LPVOID lpOutBuffer, DWORD nOutBufferSize) DECLSPEC_HIDDEN;
-extern NTSTATUS TAPE_DeviceIoControl(HANDLE hDevice, 
+extern NTSTATUS TAPE_DeviceIoControl(HANDLE hDevice,
                                      HANDLE hEvent, PIO_APC_ROUTINE UserApcRoutine,
-                                     PVOID UserApcContext, 
-                                     PIO_STATUS_BLOCK piosb, 
+                                     PVOID UserApcContext,
+                                     PIO_STATUS_BLOCK piosb,
                                      ULONG IoControlCode,
                                      LPVOID lpInBuffer, DWORD nInBufferSize,
                                      LPVOID lpOutBuffer, DWORD nOutBufferSize) DECLSPEC_HIDDEN;
@@ -190,7 +190,7 @@ extern SIZE_T virtual_uninterrupted_read_memory( const void *addr, void *buffer,
 extern NTSTATUS virtual_uninterrupted_write_memory( void *addr, const void *buffer, SIZE_T size ) DECLSPEC_HIDDEN;
 extern void VIRTUAL_SetForceExec( BOOL enable ) DECLSPEC_HIDDEN;
 extern void virtual_release_address_space(void) DECLSPEC_HIDDEN;
-extern void virtual_set_large_address_space(void) DECLSPEC_HIDDEN;
+extern void virtual_set_large_address_space( BOOL force ) DECLSPEC_HIDDEN;
 extern void virtual_fill_image_information( const pe_image_info_t *pe_info,
                                             SECTION_IMAGE_INFORMATION *info ) DECLSPEC_HIDDEN;
 extern struct _KUSER_SHARED_DATA *user_shared_data DECLSPEC_HIDDEN;
