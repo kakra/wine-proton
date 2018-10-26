@@ -85,8 +85,6 @@ static const WCHAR steamclient_pathW[] = {'C',':','\\','P','r','o','g','r','a','
 #endif
 static const WCHAR steamProgramPathW[] = {'C',':','\\','P','r','o','g','r','a','m',' ','F','i','l','e','s',' ','(','x','8','6',')','\\','S','t','e','a','m',0};
 static const DWORD steamProgramPathW_len = 28;
-static const WCHAR steamdllW[] = {'S','t','e','a','m','.','d','l','l',0};
-static const DWORD steamdllW_len = 9;
 static HMODULE steamclient_hmod = NULL;
 static HMODULE lsteamclient_hmod = NULL;
 
