@@ -314,6 +314,7 @@ static void poll_sdl_device_state(LPDIRECTINPUTDEVICE8A iface)
         int oldVal;
         newVal = SDL_JoystickGetAxis(This->device, i);
         newVal = joystick_map_axis(&This->generic.props[i], newVal);
+        oldVal = newVal;
         switch (i)
         {
             case 0: oldVal = This->generic.js.lX;
