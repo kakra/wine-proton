@@ -56,17 +56,21 @@ static BOOL has_sched_iso = FALSE;
 static int rlim_nice_max = 20; /* -1 = umlimited */
 
 /* gets the priority value from an environment variable */
-static int get_priority( const char *variable, int min, int max )
+static int get_priority( const char *variable, const int min, const int max, const int def )
 {
     const char *env;
     int val;
 
     env = getenv( variable );
-    if (!env) return -1;
+    val = env ? atoi(env) : min( max, max( min, def ));
 
-    val = atoi( env );
-    if (val >= min && val <= max) return val;
-    fprintf( stderr, "wineserver: %s should be between %d and %d\n", variable, min, max );
+    if (val >= min && val <= max)
+        return val;
+
+    if (val == 0)
+        fprintf( stderr, "wineserver: not using %s\n", variable );
+    else
+        fprintf( stderr, "wineserver: %s should be between %d and %d\n", variable, min, max );
     return -1;
 }
 
@@ -137,7 +141,7 @@ void init_scheduler( void )
         goto skip_sched_fifo;
     }
 
-    if (!has_sched_iso && ((priority = get_priority( "STAGING_RT_PRIORITY_SERVER", min, max )) != -1))
+    if (!has_sched_iso && ((priority = get_priority( "STAGING_RT_PRIORITY_SERVER", min, max, max-9 )) != -1))
     {
         memset( &param, 0, sizeof(param) );
         param.sched_priority = priority;
@@ -156,7 +160,7 @@ void init_scheduler( void )
     }
 
     /* determine base priority which will be used for SCHED_FIFO threads */
-    thread_base_priority_fifo = get_priority( "STAGING_RT_PRIORITY_BASE", min, max - 31 );
+    thread_base_priority_fifo = get_priority( "STAGING_RT_PRIORITY_BASE", min, max - 31, (min+max)/2 );
     if (thread_base_priority_fifo != -1)
         if (debug_level)
             fprintf( stderr, "wineserver: initialized SCHED_FIFO thread base priority to %d\n",
@@ -172,7 +176,7 @@ skip_sched_fifo:
     }
 
     /* determine base priority which will be used for SCHED_RR threads */
-    thread_base_priority_rr = get_priority( "STAGING_RT_PRIORITY_BASE", min, max - 31 );
+    thread_base_priority_rr = get_priority( "STAGING_RT_PRIORITY_BASE", min, max - 31, (min+max)/2 );
     if (thread_base_priority_rr != -1)
         if (debug_level)
             fprintf( stderr, "wineserver: initialized SCHED_RR thread base priority to %d\n",
