@@ -1456,6 +1456,20 @@ static void set_process_affinity( struct process *process, affinity_t affinity )
     }
 }
 
+static void set_process_priority( struct process *process, int priority )
+{
+    struct thread *thread;
+
+    process->priority = priority;
+    if (!process->running_threads)
+        return;
+
+    LIST_FOR_EACH_ENTRY( thread, &process->thread_list, struct thread, proc_entry )
+    {
+        set_scheduler_priority( thread );
+    }
+}
+
 /* set information about a process */
 DECL_HANDLER(set_process_info)
 {
@@ -1463,7 +1477,7 @@ DECL_HANDLER(set_process_info)
 
     if ((process = get_process_from_handle( req->handle, PROCESS_SET_INFORMATION )))
     {
-        if (req->mask & SET_PROCESS_INFO_PRIORITY) process->priority = req->priority;
+        if (req->mask & SET_PROCESS_INFO_PRIORITY) set_process_priority( process, req->priority );
         if (req->mask & SET_PROCESS_INFO_AFFINITY) set_process_affinity( process, req->affinity );
         release_object( process );
     }
