@@ -979,6 +979,8 @@ NTSTATUS WINAPI sdl_driver_init(DRIVER_OBJECT *driver, UNICODE_STRING *registry_
         goto error;
     }
 
+    SetThreadPriority(events[1], THREAD_PRIORITY_TIME_CRITICAL);
+
     result = WaitForMultipleObjects(2, events, FALSE, INFINITE);
     CloseHandle(events[0]);
     CloseHandle(events[1]);
