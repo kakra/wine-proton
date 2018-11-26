@@ -219,9 +219,7 @@ void set_scheduler_priority( struct thread *thread )
      * This seems to be more correct. As stated above, the only exception here is
      * priority 15 as a heuristic for multimedia workloads. Current Wine is lacking
      * properly implemented AVRT and MMCSS functions. Built-in xaudio seems to use
-     * thread priorities while native xaudio seems to use AVRT functions. Adding
-     * AVRT support is handled in another commit. Thus, native xaudio cannot benefit
-     * from this without touching the AVRT implementation.
+     * thread priorities while native xaudio seems to use AVRT functions.
      */
 
     if (process->priority == PROCESS_PRIOCLASS_IDLE)
@@ -273,15 +271,41 @@ void set_scheduler_priority( struct thread *thread )
         max_prio = 31;
     }
 
-    /* Prefer SCHED_ISO for LOWRT prio */
-    // TODO: This should probably go away when everything can use AVRT properly.
-    if ((prio == THREAD_BASE_PRIORITY_LOWRT) && (policy == SCHED_OTHER))
-        policy = SCHED_ISO;
+    if (thread->mmcss_priority == 0)
+    {
+        /* Restrict priority into bounds */
+        prio = max(min_prio, min(max_prio, prio + thread->priority));
 
-    /* Prefer SCHED_BATCH for lowest prio */
-    // TODO: This should probably go away at some point.
-    if ((thread->priority <= THREAD_BASE_PRIORITY_MIN) && (policy == SCHED_OTHER))
-        policy = SCHED_BATCH;
+        /* Prefer SCHED_ISO for LOWRT prio */
+        // TODO: This should probably go away when everything can use AVRT properly.
+        if ((prio == THREAD_BASE_PRIORITY_LOWRT) && (policy == SCHED_OTHER))
+            policy = SCHED_ISO;
+
+        /* Prefer SCHED_BATCH for lowest prio */
+        // TODO: This should probably go away at some point.
+        if ((thread->priority <= THREAD_BASE_PRIORITY_MIN) && (policy == SCHED_OTHER))
+            policy = SCHED_BATCH;
+    }
+    else
+    {
+        /* The priority is under control of MMCSS */
+        prio = max(1, min(26, thread->mmcss_priority));
+
+        /* Classify the scheduler based on the priority
+         * https://docs.microsoft.com/de-de/windows/desktop/ProcThread/multimedia-class-scheduler-service
+         */
+        // TODO: This could maybe use SCHED_DEADLINE instead since system profiles
+        // define clock rates. This would need implementing more bits into the
+        // wineserver protocol.
+        if (prio >= 23)
+            policy = SCHED_FIFO;
+        else if (prio >= 16)
+            policy = SCHED_ISO;
+        else if (prio >= 8)
+            policy = SCHED_OTHER;
+        else
+            policy = SCHED_BATCH;
+    }
 
     /* Downgrade SCHED_FIFO to SCHED_RR if it's not supported */
     if ((thread_base_priority_fifo == -1) && (policy == SCHED_FIFO))
@@ -322,8 +346,8 @@ void set_scheduler_priority( struct thread *thread )
     }
 
     if (debug_level)
-        fprintf( stderr, "%04x: set_scheduler_priority (tid:%d,class:%d,threadprio:%d,nice:%d,sched:%d/%d)\n",
-                 thread->id, thread->unix_tid, process->priority, thread->priority, nice, policy, prio);
+        fprintf( stderr, "%04x: set_scheduler_priority (tid:%d,class:%d,prio:%d,mmcss:%d,nice:%d,sched:%d/%d)\n",
+                 thread->id, thread->unix_tid, process->priority, thread->priority, thread->mmcss_priority, nice, policy, prio);
 
     /* According to "man setpriority", only non-realtime schedulers are affected by setpriority().
      * If a process later reverts to SCHED_OTHER it shall see its nice priority untouched, read, it
