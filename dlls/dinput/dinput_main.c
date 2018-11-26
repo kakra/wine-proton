@@ -1827,6 +1827,8 @@ static BOOL check_hook_thread(void)
     {
         hook_thread_event = CreateEventW(NULL, FALSE, FALSE, NULL);
         hook_thread = CreateThread(NULL, 0, hook_thread_proc, hook_thread_event, 0, &hook_thread_id);
+        if (hook_thread)
+            SetThreadPriority(hook_thread, THREAD_PRIORITY_TIME_CRITICAL);
         LeaveCriticalSection(&dinput_hook_crit);
     }
     else if (list_empty(&direct_input_list) && hook_thread)
