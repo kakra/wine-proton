@@ -410,6 +410,7 @@ NTSTATUS WINAPI iohid_driver_init(DRIVER_OBJECT *driver, UNICODE_STRING *registr
         return STATUS_UNSUCCESSFUL;
     }
 
+    SetThreadPriority(run_loop_handle, THREAD_PRIORITY_TIME_CRITICAL);
     return STATUS_SUCCESS;
 }
 

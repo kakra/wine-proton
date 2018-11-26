@@ -795,8 +795,9 @@ static NTSTATUS begin_report_processing(DEVICE_OBJECT *device)
         close(private->control_pipe[1]);
         return STATUS_UNSUCCESSFUL;
     }
-    else
-        return STATUS_SUCCESS;
+
+    SetThreadPriority(private->report_thread, THREAD_PRIORITY_TIME_CRITICAL);
+    return STATUS_SUCCESS;
 }
 
 static NTSTATUS hidraw_set_output_report(DEVICE_OBJECT *device, UCHAR id, BYTE *report, DWORD length, ULONG_PTR *written)
@@ -1006,6 +1007,8 @@ static NTSTATUS lnxev_begin_report_processing(DEVICE_OBJECT *device)
         close(private->base.control_pipe[1]);
         return STATUS_UNSUCCESSFUL;
     }
+
+    SetThreadPriority(private->base.report_thread, THREAD_PRIORITY_TIME_CRITICAL);
     return STATUS_SUCCESS;
 }
 
@@ -1461,6 +1464,8 @@ NTSTATUS WINAPI udev_driver_init(DRIVER_OBJECT *driver, UNICODE_STRING *registry
         CloseHandle(events[0]);
         goto error;
     }
+
+    SetThreadPriority(events[1], THREAD_PRIORITY_TIME_CRITICAL);
 
     result = WaitForMultipleObjects(2, events, FALSE, INFINITE);
     CloseHandle(events[0]);
