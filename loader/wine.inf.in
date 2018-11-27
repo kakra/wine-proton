@@ -69,6 +69,7 @@ AddReg=\
     Fonts,\
     MCI,\
     Misc,\
+    MMCSS,\
     Nls,\
     OLE,\
     Printing,\
@@ -100,6 +101,7 @@ AddReg=\
     GameDllOverrides.ntamd64,\
     MCI,\
     Misc,\
+    MMCSS,\
     Nls,\
     OLE,\
     Printing,\
@@ -187,6 +189,8 @@ CurrentVersionNT="Software\Microsoft\Windows NT\CurrentVersion"
 FontSubStr="Software\Microsoft\Windows NT\CurrentVersion\FontSubstitutes"
 Control="System\CurrentControlSet\Control"
 FontsNT="Software\Microsoft\Windows NT\CurrentVersion\Fonts"
+MultimediaSystemProfileNT="Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+MultimediaTasksNT="Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks"
 
 [Classes]
 HKCR,.chm,,2,"chm.file"
@@ -3703,6 +3707,68 @@ HKLM,Software\Wine\LicenseInformation,"Shell-InBoxGames-Shanghai-EnableGame",0x1
 HKLM,Software\Wine\LicenseInformation,"Shell-InBoxGames-Solitaire-EnableGame",0x10001,0x00000001
 HKLM,Software\Wine\LicenseInformation,"Shell-InBoxGames-SpiderSolitaire-EnableGame",0x10001,0x00000001
 HKLM,Software\Wine\LicenseInformation,"Shell-PremiumInBoxGames-Chess-EnableGame",0x10001,0x00000001
+
+[MMCSS]
+; based on MSDN and registry values from a Windows 10 installation
+HKLM,%MultimediaSystemProfileNT%,"NetworkThrottlingIndex",0x10001,10
+HKLM,%MultimediaSystemProfileNT%,"SystemResponsiveness",0x10001,20
+
+HKLM,%MultimediaTasksNT%\Audio,"Affinity",0x10001,0
+HKLM,%MultimediaTasksNT%\Audio,"Background Only",0x2,"True"
+HKLM,%MultimediaTasksNT%\Audio,"Clock Rate",0x10001,0x00002710
+HKLM,%MultimediaTasksNT%\Audio,"GPU Priority",0x10001,8
+HKLM,%MultimediaTasksNT%\Audio,"Priority",0x10001,6
+HKLM,%MultimediaTasksNT%\Audio,"Scheduling Category",0x2,"Medium"
+HKLM,%MultimediaTasksNT%\Audio,"SFIO Priority",0x2,"Normal"
+
+HKLM,%MultimediaTasksNT%\Capture,"Affinity",0x10001,0
+HKLM,%MultimediaTasksNT%\Capture,"Background Only",0x2,"True"
+HKLM,%MultimediaTasksNT%\Capture,"Clock Rate",0x10001,0x00002710
+HKLM,%MultimediaTasksNT%\Capture,"GPU Priority",0x10001,8
+HKLM,%MultimediaTasksNT%\Capture,"Priority",0x10001,5
+HKLM,%MultimediaTasksNT%\Capture,"Scheduling Category",0x2,"Medium"
+HKLM,%MultimediaTasksNT%\Capture,"SFIO Priority",0x2,"Normal"
+
+HKLM,%MultimediaTasksNT%\Distribution,"Affinity",0x10001,0
+HKLM,%MultimediaTasksNT%\Distribution,"Background Only",0x2,"True"
+HKLM,%MultimediaTasksNT%\Distribution,"Clock Rate",0x10001,0x00002710
+HKLM,%MultimediaTasksNT%\Distribution,"GPU Priority",0x10001,8
+HKLM,%MultimediaTasksNT%\Distribution,"Priority",0x10001,4
+HKLM,%MultimediaTasksNT%\Distribution,"Scheduling Category",0x2,"Medium"
+HKLM,%MultimediaTasksNT%\Distribution,"SFIO Priority",0x2,"Normal"
+
+HKLM,%MultimediaTasksNT%\Games,"Affinity",0x10001,0
+HKLM,%MultimediaTasksNT%\Games,"Background Only",0x2,"False"
+HKLM,%MultimediaTasksNT%\Games,"Clock Rate",0x10001,0x00002710
+HKLM,%MultimediaTasksNT%\Games,"GPU Priority",0x10001,8
+HKLM,%MultimediaTasksNT%\Games,"Priority",0x10001,2
+HKLM,%MultimediaTasksNT%\Games,"Scheduling Category",0x2,"Medium"
+HKLM,%MultimediaTasksNT%\Games,"SFIO Priority",0x2,"Normal"
+
+HKLM,%MultimediaTasksNT%\Playback,"Affinity",0x10001,0
+HKLM,%MultimediaTasksNT%\Playback,"Background Only",0x2,"False"
+HKLM,%MultimediaTasksNT%\Playback,"BackgroundPriority",0x10001,4
+HKLM,%MultimediaTasksNT%\Playback,"Clock Rate",0x10001,0x00002710
+HKLM,%MultimediaTasksNT%\Playback,"GPU Priority",0x10001,8
+HKLM,%MultimediaTasksNT%\Playback,"Priority",0x10001,3
+HKLM,%MultimediaTasksNT%\Playback,"Scheduling Category",0x2,"Medium"
+HKLM,%MultimediaTasksNT%\Playback,"SFIO Priority",0x2,"Normal"
+
+HKLM,%MultimediaTasksNT%\Pro Audio,"Affinity",0x10001,0
+HKLM,%MultimediaTasksNT%\Pro Audio,"Background Only",0x2,"False"
+HKLM,%MultimediaTasksNT%\Pro Audio,"Clock Rate",0x10001,0x00002710
+HKLM,%MultimediaTasksNT%\Pro Audio,"GPU Priority",0x10001,8
+HKLM,%MultimediaTasksNT%\Pro Audio,"Priority",0x10001,1
+HKLM,%MultimediaTasksNT%\Pro Audio,"Scheduling Category",0x2,"High"
+HKLM,%MultimediaTasksNT%\Pro Audio,"SFIO Priority",0x2,"Normal"
+
+HKLM,%MultimediaTasksNT%\Window Manager,"Affinity",0x10001,0
+HKLM,%MultimediaTasksNT%\Window Manager,"Background Only",0x2,"True"
+HKLM,%MultimediaTasksNT%\Window Manager,"Clock Rate",0x10001,0x00002710
+HKLM,%MultimediaTasksNT%\Window Manager,"GPU Priority",0x10001,8
+HKLM,%MultimediaTasksNT%\Window Manager,"Priority",0x10001,5
+HKLM,%MultimediaTasksNT%\Window Manager,"Scheduling Category",0x2,"Medium"
+HKLM,%MultimediaTasksNT%\Window Manager,"SFIO Priority",0x2,"Normal"
 
 [SteamClient]
 HKCU,Software\Valve\Steam\ActiveProcess,"PID",0x10001,0x0000fffe
