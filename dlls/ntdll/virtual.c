@@ -2578,6 +2578,10 @@ NTSTATUS WINAPI NtAllocateVirtualMemory( HANDLE process, PVOID *ret, ULONG zero_
         }
     }
 
+#ifdef MADV_HUGEPAGE
+    if (base && (type & MEM_LARGE_PAGES)) madvise( base, size, MADV_HUGEPAGE );
+#endif
+
     if (!status) VIRTUAL_DEBUG_DUMP_VIEW( view );
 
     if (use_locks) server_leave_uninterrupted_section( &csVirtual, &sigset );
