@@ -181,7 +181,43 @@ NTSTATUS WINAPI LsaEnumerateAccountRights(
     PLSA_UNICODE_STRING *rights,
     PULONG count)
 {
+    static WCHAR seLockMemoryPrivilege[] = {'S','e','L','o','c','k','M','e','m','o','r','y','P','r','i','v','i','l','e','g','e',0};
+    static const PWCHAR static_rights[] = {
+        seLockMemoryPrivilege,
+    };
+
+    int buffer_size = 0;
+    PLSA_UNICODE_STRING buffer_pos = NULL;
+
     FIXME("(%p,%p,%p,%p) stub\n", policy, sid, rights, count);
+
+    for (int i = 0; i < ARRAY_SIZE(static_rights); i++)
+    {
+        buffer_size += sizeof(PLSA_UNICODE_STRING);
+        buffer_size += sizeof(LSA_UNICODE_STRING);
+        buffer_size += sizeof(WCHAR) * (strlenW(static_rights[i]) + 1);
+    };
+
+    buffer_pos = heap_alloc(buffer_size);
+    if (buffer_pos)
+    {
+        *rights = buffer_pos;
+        *count = ARRAY_SIZE(static_rights);
+        buffer_pos += ARRAY_SIZE(static_rights);
+
+        for (int i = 0; i < ARRAY_SIZE(static_rights); i++)
+        {
+            int len = strlenW(static_rights[i]);
+            buffer_pos->Length = len * sizeof(WCHAR);
+            buffer_pos->MaximumLength = buffer_pos->Length + sizeof(WCHAR);
+            buffer_pos->Buffer = (void *)(buffer_pos + 1);
+            strcpyW(buffer_pos->Buffer, static_rights[i]);
+            rights[i] = buffer_pos;
+            buffer_pos = (void *)&buffer_pos->Buffer[len + 2];
+        }
+        return STATUS_SUCCESS;
+    }
+
     *rights = 0;
     *count = 0;
     return STATUS_OBJECT_NAME_NOT_FOUND;
