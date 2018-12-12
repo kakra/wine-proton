@@ -10,3 +10,6 @@
 [submodule "vendor/dxvk"]
 	path = vendor/dxvk
 	url = https://github.com/kakra/dxvk.git
+[submodule "vendor/faudio"]
+	path = vendor/faudio
+	url = https://github.com/kakra/FAudio.git
