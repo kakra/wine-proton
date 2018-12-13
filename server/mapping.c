@@ -926,6 +926,12 @@ static struct object *create_mapping( struct object *root, const struct unicode_
                                                  FILE_SYNCHRONOUS_IO_NONALERT ))) goto error;
         allow_fd_caching( mapping->fd );
     }
+
+#ifdef MADV_HUGEPAGE
+    if (mapping->committed && (flags & SEC_LARGE_PAGES))
+        madvise( mapping->committed, mapping->size, MADV_HUGEPAGE );
+#endif
+
     return &mapping->obj;
 
  error:
