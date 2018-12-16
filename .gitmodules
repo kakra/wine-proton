@@ -1,3 +1,6 @@
 [submodule "vendor/vulkan-headers"]
 	path = vendor/vulkan-headers
 	url = https://github.com/KhronosGroup/Vulkan-Headers.git
+[submodule "vendor/spirv-headers"]
+	path = vendor/spirv-headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
