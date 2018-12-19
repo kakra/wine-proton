@@ -11328,7 +11328,6 @@ static void test_arrange_iconic_windows(void)
 
     SetLastError(0xdeadbeef);
     ret = ArrangeIconicWindows(parent);
-todo_wine
     ok(!ret, "wrong ret %u\n", ret);
     ok(GetLastError() == 0xdeadbeef, "wrong error %u\n", GetLastError());
 
@@ -11342,7 +11341,6 @@ todo_wine
 
     SetLastError(0xdeadbeef);
     ret = ArrangeIconicWindows(parent);
-todo_wine
     ok(!ret, "wrong ret %u\n", ret);
     ok(GetLastError() == 0xdeadbeef, "wrong error %u\n", GetLastError());
 
@@ -11365,14 +11363,12 @@ todo_wine
     }
 
     ret = ArrangeIconicWindows(parent);
-todo_wine
     ok(ret == 1, "wrong ret %u\n", ret);
 
     GetWindowRect(hwnds[0], &rect);
     SetRect(&expect, 0, 0, GetSystemMetrics(SM_CXMINIMIZED), GetSystemMetrics(SM_CYMINIMIZED));
     OffsetRect(&expect, mm.iHorzGap, mm.iVertGap);
     OffsetRect(&expect, pt.x, pt.y);
-todo_wine
     ok(EqualRect(&rect, &expect), "expected rect %s, got %s\n",
         wine_dbgstr_rect(&expect), wine_dbgstr_rect(&rect));
 
@@ -11394,7 +11390,6 @@ todo_wine
     }
 
     ret = ArrangeIconicWindows(parent);
-todo_wine
     ok(ret == 10, "wrong ret %u\n", ret);
 
     col = mm.iHorzGap;
@@ -11411,7 +11406,6 @@ todo_wine
         SetRect(&expect, col, row, col + GetSystemMetrics(SM_CXMINIMIZED),
             row + GetSystemMetrics(SM_CYMINIMIZED));
         OffsetRect(&expect, pt.x, pt.y);
-todo_wine
         ok(EqualRect(&rect, &expect), "hwnd %u: expected rect %s, got %s\n", i,
             wine_dbgstr_rect(&expect), wine_dbgstr_rect(&rect));
 
@@ -11431,7 +11425,6 @@ todo_wine
     }
 
     ret = ArrangeIconicWindows(parent);
-todo_wine
     ok(ret == 10, "wrong ret %u\n", ret);
 
     col = parent_rect.right - mm.iHorzGap;
@@ -11448,7 +11441,6 @@ todo_wine
         SetRect(&expect, col - GetSystemMetrics(SM_CXMINIMIZED),
             row - GetSystemMetrics(SM_CYMINIMIZED), col, row);
         OffsetRect(&expect, pt.x, pt.y);
-todo_wine
         ok(EqualRect(&rect, &expect), "hwnd %u: expected rect %s, got %s\n", i,
             wine_dbgstr_rect(&expect), wine_dbgstr_rect(&rect));
 
