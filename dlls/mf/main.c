@@ -74,3 +74,143 @@ HRESULT WINAPI MFGetService(IUnknown *object, REFGUID service, REFIID riid, void
     IMFGetService_Release(gs);
     return hr;
 }
+
+typedef struct seqsource
+{
+    IMFSequencerSource IMFSequencerSource_iface;
+    LONG ref;
+} seqsource;
+
+static inline seqsource *impl_from_IMFSequencerSource(IMFSequencerSource *iface)
+{
+    return CONTAINING_RECORD(iface, seqsource, IMFSequencerSource_iface);
+}
+
+static HRESULT WINAPI seqsource_QueryInterface(IMFSequencerSource *iface, REFIID riid, void **out)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+
+    TRACE("(%p)->(%s %p)\n", This, debugstr_guid(riid), out);
+
+    if ( IsEqualIID(riid, &IID_IMFSequencerSource) ||
+            IsEqualIID(riid, &IID_IUnknown))
+    {
+        *out = &This->IMFSequencerSource_iface;
+    }
+    else
+    {
+        FIXME("(%s, %p)\n", debugstr_guid(riid), out);
+        *out = NULL;
+        return E_NOINTERFACE;
+    }
+
+    IUnknown_AddRef((IUnknown*)*out);
+    return S_OK;
+}
+
+static ULONG WINAPI seqsource_AddRef(IMFSequencerSource *iface)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+    ULONG ref = InterlockedIncrement(&This->ref);
+
+    TRACE("(%p) ref=%u\n", This, ref);
+
+    return ref;
+}
+
+static ULONG WINAPI seqsource_Release(IMFSequencerSource *iface)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+    ULONG ref = InterlockedDecrement(&This->ref);
+
+    TRACE("(%p) ref=%u\n", This, ref);
+
+    if (!ref)
+    {
+        HeapFree(GetProcessHeap(), 0, This);
+    }
+
+    return ref;
+}
+
+static HRESULT WINAPI seqsource_AppendTopology(IMFSequencerSource *iface, IMFTopology *topology, DWORD flags, MFSequencerElementId *element)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+
+    FIXME("%p, %p, %x, %p\n", This, topology, flags, element);
+
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI seqsource_DeleteTopology(IMFSequencerSource *iface, MFSequencerElementId element)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+
+    FIXME("%p, %d\n", This, element);
+
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI seqsource_GetPresentationContext(IMFSequencerSource *iface, IMFPresentationDescriptor *pd, MFSequencerElementId *id,
+        IMFTopology **topology)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+
+    FIXME("%p, %p, %p, %p\n", This, pd, id, topology);
+
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI seqsource_UpdateTopology(IMFSequencerSource *iface, MFSequencerElementId id, IMFTopology *topology)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+
+    FIXME("%p, %d, %p\n", This, id, topology);
+
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI seqsource_UpdateTopologyFlags(IMFSequencerSource *iface, MFSequencerElementId id, DWORD flags)
+{
+    seqsource *This = impl_from_IMFSequencerSource(iface);
+
+    FIXME("%p, %d, %x\n", This, id, flags);
+
+    return E_NOTIMPL;
+}
+
+static const IMFSequencerSourceVtbl seqsrc_vtbl =
+{
+    seqsource_QueryInterface,
+    seqsource_AddRef,
+    seqsource_Release,
+    seqsource_AppendTopology,
+    seqsource_DeleteTopology,
+    seqsource_GetPresentationContext,
+    seqsource_UpdateTopology,
+    seqsource_UpdateTopologyFlags
+};
+
+/***********************************************************************
+ *      MFCreateSequencerSource (mf.@)
+ */
+HRESULT WINAPI MFCreateSequencerSource(IUnknown *reserved, IMFSequencerSource **sequencer)
+{
+    seqsource *object;
+
+    TRACE("(%p, %p)\n", reserved, sequencer);
+
+    if (!sequencer)
+        return E_POINTER;
+
+    object = HeapAlloc(GetProcessHeap(), 0, sizeof(*object));
+    if (!object)
+        return E_OUTOFMEMORY;
+
+    object->IMFSequencerSource_iface.lpVtbl = &seqsrc_vtbl;
+    object->ref = 1;
+
+    *sequencer = &object->IMFSequencerSource_iface;
+
+    return S_OK;
+}
