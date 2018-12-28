@@ -34,6 +34,7 @@
 #include "winuser.h"
 #include "shlobj.h"
 #include "propvarutil.h"
+#include "strsafe.h"
 
 #include "wine/debug.h"
 #include "wine/unicode.h"
@@ -302,6 +303,43 @@ HRESULT WINAPI PropVariantToBoolean(REFPROPVARIANT propvarIn, BOOL *ret)
 
     hr = PROPVAR_ConvertNumber(propvarIn, 64, TRUE, &res);
     *ret = !!res;
+    return hr;
+}
+
+HRESULT WINAPI PropVariantToString(REFPROPVARIANT propvarIn, PWSTR ret, UINT cch)
+{
+    HRESULT hr = S_OK;
+
+    TRACE("(%p, %p, %d): semi-stub\n", propvarIn, ret, cch);
+
+    ret[0] = '\0';
+
+    if(!cch)
+        return E_INVALIDARG;
+
+    switch(propvarIn->vt)
+    {
+        case VT_NULL:
+        case VT_EMPTY:
+            break;
+        case VT_BSTR:
+        case VT_LPWSTR:
+            if(lstrlenW(propvarIn->u.pwszVal) > cch)
+                hr = STRSAFE_E_INSUFFICIENT_BUFFER;
+            else
+                lstrcpyW(ret, propvarIn->u.pwszVal);
+            break;
+        case VT_LPSTR:
+            if(strlen(propvarIn->u.pszVal) > cch)
+                hr = STRSAFE_E_INSUFFICIENT_BUFFER;
+            else
+                MultiByteToWideChar(CP_ACP, 0, propvarIn->u.pszVal, -1, ret, cch);
+            break;
+        default:
+            FIXME("Unsupported conversion (%d)\n", propvarIn->vt);
+            hr = E_FAIL;
+            break;
+    }
     return hr;
 }
 
