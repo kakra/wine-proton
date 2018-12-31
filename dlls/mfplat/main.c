@@ -903,9 +903,21 @@ static HRESULT WINAPI mfattributes_GetItemByIndex(IMFAttributes *iface, UINT32 i
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
 
-    FIXME("%p, %d, %p, %p\n", This, index, key, value);
+    TRACE("%p, %d, %p, %p\n", This, index, key, value);
 
-    return E_NOTIMPL;
+    EnterCriticalSection(&This->lock);
+
+    if(index >= This->count)
+    {
+        LeaveCriticalSection(&This->lock);
+        return E_INVALIDARG;
+    }
+    *key = This->attributes[This->count - index - 1]->key;
+    PropVariantCopy(value, &This->attributes[This->count - index - 1]->value);
+
+    LeaveCriticalSection(&This->lock);
+
+    return S_OK;
 }
 
 static HRESULT WINAPI mfattributes_CopyAllItems(IMFAttributes *iface, IMFAttributes *dest)
