@@ -774,10 +774,27 @@ static HRESULT WINAPI mfattributes_SetItem(IMFAttributes *iface, REFGUID key, RE
 static HRESULT WINAPI mfattributes_DeleteItem(IMFAttributes *iface, REFGUID key)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    struct mfattribute *attribute = NULL;
+    int index = 0;
 
-    FIXME("%p, %s\n", This, debugstr_guid(key));
+    TRACE("%p, %s\n", This, debugstr_guid(key));
 
-    return E_NOTIMPL;
+    EnterCriticalSection(&This->lock);
+
+    index = mfattributes_finditem(This, key, &attribute);
+    if(attribute)
+    {
+        PropVariantClear(&attribute->value);
+        heap_free(attribute);
+
+        This->count--;
+        for(; index < This->count; index++)
+            This->attributes[index] = This->attributes[index+1];
+    }
+
+    LeaveCriticalSection(&This->lock);
+
+    return S_OK;
 }
 
 static HRESULT WINAPI mfattributes_DeleteAllItems(IMFAttributes *iface)

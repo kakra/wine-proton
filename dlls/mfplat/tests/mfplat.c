@@ -767,7 +767,7 @@ static void test_IMFAttributes_item(void)
     ok(hr == S_OK, "IMFAttributes_SetItem failed: 0x%08x.\n", hr);
 
     hr = IMFAttributes_DeleteItem(attributes, &DUMMY_GUID2);
-    todo_wine ok(hr == S_OK, "IMFAttributes_DeleteItem failed: 0x%08x.\n", hr);
+    ok(hr == S_OK, "IMFAttributes_DeleteItem failed: 0x%08x.\n", hr);
     hr = IMFAttributes_GetItemByIndex(attributes, 0, &key, &ret_propvar);
     todo_wine ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
     todo_wine ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
@@ -782,6 +782,9 @@ static void test_IMFAttributes_item(void)
     todo_wine ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
                  ret_propvar.vt, U(ret_propvar).ulVal);
     todo_wine ok(IsEqualIID(&key, &DUMMY_GUID1), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
+
+    hr = IMFAttributes_DeleteItem(attributes, &DUMMY_GUID2);
+    ok(hr == S_OK, "IMFAttributes_DeleteItem failed: 0x%08x.\n", hr);
 
     IMFAttributes_Release(attributes);
 }
