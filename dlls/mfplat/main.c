@@ -35,6 +35,7 @@
 #include "wine/heap.h"
 #include "wine/debug.h"
 #include "wine/unicode.h"
+#include "wine/list.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(mfplat);
 
@@ -448,10 +449,20 @@ HRESULT WINAPI MFCopyImage(BYTE *dest, LONG deststride, const BYTE *src, LONG sr
     return E_NOTIMPL;
 }
 
+struct mfattribute
+{
+    GUID key;
+    PROPVARIANT value;
+};
+
 typedef struct _mfattributes
 {
     IMFAttributes IMFAttributes_iface;
     LONG ref;
+    CRITICAL_SECTION lock;
+    struct mfattribute **attributes;
+    int count;
+    int allocated;
 } mfattributes;
 
 static inline mfattributes *impl_from_IMFAttributes(IMFAttributes *iface)
@@ -491,6 +502,8 @@ static ULONG WINAPI mfattributes_AddRef(IMFAttributes *iface)
     return ref;
 }
 
+static void free_attribute_object(mfattributes *object);
+
 static ULONG WINAPI mfattributes_Release(IMFAttributes *iface)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
@@ -500,19 +513,54 @@ static ULONG WINAPI mfattributes_Release(IMFAttributes *iface)
 
     if (!ref)
     {
+        free_attribute_object(This);
         HeapFree(GetProcessHeap(), 0, This);
     }
 
     return ref;
 }
 
+static int mfattributes_finditem(mfattributes *object, REFGUID key, struct mfattribute **attribute)
+{
+    int index;
+
+    *attribute = NULL;
+    for(index = 0; index < object->count; index++)
+    {
+        if(IsEqualGUID(key, &object->attributes[index]->key))
+        {
+            *attribute = object->attributes[index];
+            break;
+        }
+    }
+    return index;
+}
+
+static HRESULT mfattributes_getitem(mfattributes *object, REFGUID key, PROPVARIANT *value)
+{
+    HRESULT hres;
+    struct mfattribute *attribute = NULL;
+
+    EnterCriticalSection(&object->lock);
+
+    mfattributes_finditem(object, key, &attribute);
+    if(!attribute)
+        hres = MF_E_ATTRIBUTENOTFOUND;
+    else
+        hres = PropVariantCopy(value, &attribute->value);
+
+    LeaveCriticalSection(&object->lock);
+
+    return hres;
+}
+
 static HRESULT WINAPI mfattributes_GetItem(IMFAttributes *iface, REFGUID key, PROPVARIANT *value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), value);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), value);
 
-    return E_NOTIMPL;
+    return mfattributes_getitem(This, key, value);
 }
 
 static HRESULT WINAPI mfattributes_GetItemType(IMFAttributes *iface, REFGUID key, MF_ATTRIBUTE_TYPE *type)
@@ -645,13 +693,82 @@ static HRESULT WINAPI mfattributes_GetUnknown(IMFAttributes *iface, REFGUID key,
     return E_NOTIMPL;
 }
 
-static HRESULT WINAPI mfattributes_SetItem(IMFAttributes *iface, REFGUID key, REFPROPVARIANT Value)
+static HRESULT mfattribute_setitem(mfattributes *object, REFGUID key, REFPROPVARIANT value)
+{
+    struct mfattribute *new_attribute = NULL;
+    int index;
+
+    EnterCriticalSection(&object->lock);
+
+    index = mfattributes_finditem(object, key, &new_attribute);
+
+    if(!new_attribute)
+    {
+        if(index == object->allocated)
+        {
+            object->allocated *= 2;
+            object->attributes = heap_realloc(object->attributes, sizeof(struct mfattribute *) * object->allocated);
+            if(!object->attributes)
+            {
+                LeaveCriticalSection(&object->lock);
+                return E_OUTOFMEMORY;
+            }
+        }
+
+        new_attribute = heap_alloc(sizeof(struct mfattribute));
+        if(!new_attribute)
+        {
+            LeaveCriticalSection(&object->lock);
+            return E_OUTOFMEMORY;
+        }
+        new_attribute->key = *key;
+
+        object->attributes[index] = new_attribute;
+        object->count++;
+    }
+    else
+        PropVariantClear(&new_attribute->value);
+
+    PropVariantCopy(&new_attribute->value, value);
+
+    LeaveCriticalSection(&object->lock);
+
+    return S_OK;
+ }
+
+static BOOL is_type_valid(DWORD type)
+{
+    switch(type)
+    {
+        case MF_ATTRIBUTE_UINT32:
+        case MF_ATTRIBUTE_UINT64:
+        case MF_ATTRIBUTE_DOUBLE:
+        case MF_ATTRIBUTE_GUID:
+        case MF_ATTRIBUTE_STRING:
+        case MF_ATTRIBUTE_BLOB:
+        case MF_ATTRIBUTE_IUNKNOWN:
+            return TRUE;
+        default:
+            return FALSE;
+    }
+}
+
+static HRESULT WINAPI mfattributes_SetItem(IMFAttributes *iface, REFGUID key, REFPROPVARIANT value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), Value);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), value);
 
-    return E_NOTIMPL;
+    if(!is_type_valid(value->vt))
+    {
+        PROPVARIANT empty_value;
+
+        PropVariantClear(&empty_value);
+        mfattribute_setitem(This, key, &empty_value);
+        return MF_E_INVALIDTYPE;
+    }
+    else
+        return mfattribute_setitem(This, key, value);
 }
 
 static HRESULT WINAPI mfattributes_DeleteItem(IMFAttributes *iface, REFGUID key)
@@ -824,6 +941,31 @@ static void init_attribute_object(mfattributes *object, UINT32 size)
 {
     object->ref = 1;
     object->IMFAttributes_iface.lpVtbl = &mfattributes_vtbl;
+    InitializeCriticalSection(&object->lock);
+    object->lock.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": IMFAttributes.lock");
+    if(!size)
+        size = 3;
+    object->attributes = heap_alloc_zero(sizeof(struct mfattribute*) * size);
+    object->count = 0;
+    object->allocated = size;
+}
+
+static void free_attribute_object(mfattributes *object)
+{
+    int i;
+
+    EnterCriticalSection(&object->lock);
+
+    for(i = 0; i < object->count; i++)
+    {
+        PropVariantClear(&object->attributes[i]->value);
+        heap_free(object->attributes[i]);
+    }
+
+    LeaveCriticalSection(&object->lock);
+
+    object->lock.DebugInfo->Spare[0] = 0;
+    DeleteCriticalSection(&object->lock);
 }
 
 /***********************************************************************
@@ -901,6 +1043,7 @@ static ULONG WINAPI mfbytestream_Release(IMFByteStream *iface)
 
     if (!ref)
     {
+        free_attribute_object(&This->attributes);
         HeapFree(GetProcessHeap(), 0, This);
     }
 
@@ -1368,6 +1511,7 @@ static ULONG WINAPI mfpresentationdescriptor_Release(IMFPresentationDescriptor *
 
     if (!ref)
     {
+        free_attribute_object(&This->attributes);
         HeapFree(GetProcessHeap(), 0, This);
     }
 
@@ -2064,6 +2208,7 @@ static ULONG WINAPI mediatype_Release(IMFMediaType *iface)
 
     if (!ref)
     {
+        free_attribute_object(&This->attributes);
         HeapFree(GetProcessHeap(), 0, This);
     }
 
@@ -2426,6 +2571,7 @@ static ULONG WINAPI mfmediaevent_Release(IMFMediaEvent *iface)
 
     if (!ref)
     {
+        free_attribute_object(&This->attributes);
         HeapFree(GetProcessHeap(), 0, This);
     }
 
@@ -2940,6 +3086,7 @@ static ULONG WINAPI mfdescriptor_Release(IMFStreamDescriptor *iface)
 
     if (!ref)
     {
+        free_attribute_object(&This->attributes);
         heap_free(This);
     }
 
@@ -3437,6 +3584,7 @@ static ULONG WINAPI mfsample_Release(IMFSample *iface)
 
     if (!ref)
     {
+        free_attribute_object(&This->attributes);
         heap_free(This);
     }
 

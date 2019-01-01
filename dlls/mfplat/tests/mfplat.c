@@ -33,6 +33,7 @@
 #include "mfidl.h"
 #include "mferror.h"
 #include "mfreadwrite.h"
+#include "propvarutil.h"
 
 #include "wine/test.h"
 
@@ -51,6 +52,7 @@ DEFINE_GUID(MFT_CATEGORY_OTHER, 0x90175d57,0xb7ea,0x4901,0xae,0xb3,0x93,0x3a,0x8
 DEFINE_GUID(DUMMY_CLSID, 0x12345678,0x1234,0x1234,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19);
 DEFINE_GUID(DUMMY_GUID1, 0x12345678,0x1234,0x1234,0x21,0x21,0x21,0x21,0x21,0x21,0x21,0x21);
 DEFINE_GUID(DUMMY_GUID2, 0x12345678,0x1234,0x1234,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22);
+DEFINE_GUID(DUMMY_GUID3, 0x12345678,0x1234,0x1234,0x23,0x23,0x23,0x23,0x23,0x23,0x23,0x23);
 
 static const WCHAR mp4file[] = {'t','e','s','t','.','m','p','4',0};
 
@@ -693,6 +695,97 @@ static void test_MFSample(void)
     IMFSample_Release(sample);
 }
 
+static void test_IMFAttributes_item(void)
+{
+    IMFAttributes *attributes;
+    HRESULT hr;
+    PROPVARIANT propvar, ret_propvar;
+    GUID key;
+
+    hr = MFCreateAttributes(&attributes, 0);
+    ok(hr == S_OK, "MFCreateAttributes failed: 0x%08x.\n", hr);
+
+    PropVariantInit(&propvar);
+    propvar.vt = MF_ATTRIBUTE_UINT32;
+    U(propvar).ulVal = 123;
+    hr = IMFAttributes_SetItem(attributes, &DUMMY_GUID1, &propvar);
+    ok(hr == S_OK, "IMFAttributes_SetItem failed: 0x%08x.\n", hr);
+    PropVariantInit(&ret_propvar);
+    ret_propvar.vt = MF_ATTRIBUTE_UINT32;
+    U(ret_propvar).ulVal = 0xdeadbeef;
+    hr = IMFAttributes_GetItem(attributes, &DUMMY_GUID1, &ret_propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItem failed: 0x%08x.\n", hr);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
+       ret_propvar.vt, U(ret_propvar).ulVal);
+    PropVariantClear(&ret_propvar);
+
+    PropVariantInit(&ret_propvar);
+    ret_propvar.vt = MF_ATTRIBUTE_STRING;
+    U(ret_propvar).pwszVal = NULL;
+    hr = IMFAttributes_GetItem(attributes, &DUMMY_GUID1, &ret_propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItem failed: 0x%08x.\n", hr);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
+       ret_propvar.vt, U(ret_propvar).ulVal);
+    PropVariantClear(&ret_propvar);
+
+    PropVariantClear(&propvar);
+
+    PropVariantInit(&propvar);
+    propvar.vt = MF_ATTRIBUTE_UINT64;
+    U(propvar).uhVal.QuadPart = 65536;
+    hr = IMFAttributes_SetItem(attributes, &DUMMY_GUID1, &propvar);
+    ok(hr == S_OK, "IMFAttributes_SetItem failed: 0x%08x.\n", hr);
+    PropVariantInit(&ret_propvar);
+    ret_propvar.vt = MF_ATTRIBUTE_UINT32;
+    U(ret_propvar).ulVal = 0xdeadbeef;
+    hr = IMFAttributes_GetItem(attributes, &DUMMY_GUID1, &ret_propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItem failed: 0x%08x.\n", hr);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
+       ret_propvar.vt, U(ret_propvar).ulVal);
+    PropVariantClear(&ret_propvar);
+    PropVariantClear(&propvar);
+
+    PropVariantInit(&propvar);
+    propvar.vt = VT_I4;
+    U(propvar).lVal = 123;
+    hr = IMFAttributes_SetItem(attributes, &DUMMY_GUID2, &propvar);
+    ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_SetItem should failed: 0x%08x.\n", hr);
+    PropVariantInit(&ret_propvar);
+    ret_propvar.vt = MF_ATTRIBUTE_UINT32;
+    U(ret_propvar).lVal = 0xdeadbeef;
+    hr = IMFAttributes_GetItem(attributes, &DUMMY_GUID2, &ret_propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItem failed: 0x%08x.\n", hr);
+    PropVariantClear(&propvar);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
+       ret_propvar.vt, U(ret_propvar).ulVal);
+    PropVariantClear(&ret_propvar);
+
+    PropVariantInit(&propvar);
+    propvar.vt = MF_ATTRIBUTE_UINT32;
+    U(propvar).ulVal = 123;
+    hr = IMFAttributes_SetItem(attributes, &DUMMY_GUID3, &propvar);
+    ok(hr == S_OK, "IMFAttributes_SetItem failed: 0x%08x.\n", hr);
+
+    hr = IMFAttributes_DeleteItem(attributes, &DUMMY_GUID2);
+    todo_wine ok(hr == S_OK, "IMFAttributes_DeleteItem failed: 0x%08x.\n", hr);
+    hr = IMFAttributes_GetItemByIndex(attributes, 0, &key, &ret_propvar);
+    todo_wine ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    todo_wine ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
+                 ret_propvar.vt, U(ret_propvar).ulVal);
+    todo_wine ok(IsEqualIID(&key, &DUMMY_GUID3), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
+    PropVariantClear(&ret_propvar);
+    PropVariantClear(&propvar);
+    propvar.vt = MF_ATTRIBUTE_UINT64;
+    U(propvar).uhVal.QuadPart = 65536;
+    hr = IMFAttributes_GetItemByIndex(attributes, 1, &key, &ret_propvar);
+    todo_wine ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    todo_wine ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "Returned wrong property: (vt: %x, ulVal: %d).\n",
+                 ret_propvar.vt, U(ret_propvar).ulVal);
+    todo_wine ok(IsEqualIID(&key, &DUMMY_GUID1), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
+
+    IMFAttributes_Release(attributes);
+}
+
 START_TEST(mfplat)
 {
     CoInitialize(NULL);
@@ -708,6 +801,7 @@ START_TEST(mfplat)
     test_MFCreateMFByteStreamOnStream();
     test_MFCreateMemoryBuffer();
     test_source_resolver();
+    test_IMFAttributes_item();
 
     CoUninitialize();
 }
