@@ -32,6 +32,7 @@
 #include "mfidl.h"
 #include "mferror.h"
 #include "propvarutil.h"
+#include "shlwapi.h"
 
 #include "wine/heap.h"
 #include "wine/debug.h"
@@ -668,30 +669,58 @@ static HRESULT WINAPI mfattributes_GetGUID(IMFAttributes *iface, REFGUID key, GU
 static HRESULT WINAPI mfattributes_GetStringLength(IMFAttributes *iface, REFGUID key, UINT32 *length)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    WCHAR *string = NULL;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), length);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), length);
 
-    return E_NOTIMPL;
+    hres = IMFAttributes_GetAllocatedString(iface, key, &string, length);
+    CoTaskMemFree(string);
+
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetString(IMFAttributes *iface, REFGUID key, WCHAR *value,
-                UINT32 size, UINT32 *length)
+                                             UINT32 size, UINT32 *length)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p, %d, %p\n", This, debugstr_guid(key), value, size, length);
+    TRACE("(%p, %s, %p, %d, %p)\n", This, debugstr_guid(key), value, size, length);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_LPWSTR;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+        hres = PropVariantToString(&attrval, value, size);
+    if(SUCCEEDED(hres) && length)
+        *length = lstrlenW(value);
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetAllocatedString(IMFAttributes *iface, REFGUID key,
-                                      WCHAR **value, UINT32 *length)
+                                                      WCHAR **value, UINT32 *length)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p, %p\n", This, debugstr_guid(key), value, length);
+    TRACE("(%p, %s, %p, %p)\n", This, debugstr_guid(key), value, length);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_LPWSTR;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+        hres = PropVariantToStringAlloc(&attrval, value);
+    if(SUCCEEDED(hres))
+    {
+        *length = lstrlenW(*value);
+        hres = S_OK;
+    }
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetBlobSize(IMFAttributes *iface, REFGUID key, UINT32 *size)
@@ -895,10 +924,18 @@ static HRESULT WINAPI mfattributes_SetGUID(IMFAttributes *iface, REFGUID key, RE
 static HRESULT WINAPI mfattributes_SetString(IMFAttributes *iface, REFGUID key, const WCHAR *value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %s\n", This, debugstr_guid(key), debugstr_w(value));
+    TRACE("(%p, %s, %s)\n", This, debugstr_guid(key), debugstr_w(value));
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_LPWSTR;
+    hres = SHStrDupW(value, &attrval.pwszVal);
+    if(SUCCEEDED(hres))
+        hres = mfattributes_setitem(This, key, &attrval);
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_SetBlob(IMFAttributes *iface, REFGUID key, const UINT8 *buf, UINT32 size)
