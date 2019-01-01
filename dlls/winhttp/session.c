@@ -1025,6 +1025,10 @@ static BOOL request_set_option( struct object_header *hdr, DWORD option, void *b
         FIXME("WINHTTP_OPTION_CONNECT_RETRIES\n");
         return TRUE;
 
+    case WINHTTP_OPTION_SECURE_PROTOCOLS:
+        FIXME("WINHTTP_OPTION_SECURE_PROTOCOLS\n");
+        return TRUE;
+
     default:
         FIXME("unimplemented option %u\n", option);
         SetLastError( ERROR_WINHTTP_INVALID_OPTION );
@@ -1248,10 +1252,17 @@ static BOOL set_option( struct object_header *hdr, DWORD option, void *buffer, D
         hdr->context = *(DWORD_PTR *)buffer;
         return TRUE;
     }
+
     default:
         if (hdr->vtbl->set_option) ret = hdr->vtbl->set_option( hdr, option, buffer, buflen );
         else
         {
+            switch (option)
+            {
+            case WINHTTP_OPTION_SECURE_PROTOCOLS:
+                FIXME("WINHTTP_OPTION_SECURE_PROTOCOLS\n");
+                return TRUE;
+            }
             FIXME("unimplemented option %u\n", option);
             SetLastError( ERROR_WINHTTP_INCORRECT_HANDLE_TYPE );
             return FALSE;
