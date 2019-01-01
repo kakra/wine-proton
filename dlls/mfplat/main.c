@@ -561,7 +561,8 @@ static HRESULT mfattributes_getitem(mfattributes *object, REFGUID key, PROPVARIA
         hres = MF_E_ATTRIBUTENOTFOUND;
     else
     {
-        if(verify_type && (attribute->value.vt != value->vt))
+        if(verify_type && ((attribute->value.vt != value->vt) ||
+                           (value->vt == VT_UNKNOWN && !attribute->value.punkVal)))
             hres = MF_E_INVALIDTYPE;
         else
             hres = PropVariantCopy(value, &attribute->value);
@@ -754,10 +755,18 @@ static HRESULT WINAPI mfattributes_GetAllocatedBlob(IMFAttributes *iface, REFGUI
 static HRESULT WINAPI mfattributes_GetUnknown(IMFAttributes *iface, REFGUID key, REFIID riid, void **ppv)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %s, %p\n", This, debugstr_guid(key), debugstr_guid(riid), ppv);
+    TRACE("(%p, %s, %s, %p)\n", This, debugstr_guid(key), debugstr_guid(riid), ppv);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_UNKNOWN;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+        hres = IUnknown_QueryInterface(attrval.punkVal, riid, ppv);
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT mfattributes_setitem(mfattributes *object, REFGUID key, REFPROPVARIANT value)
@@ -950,10 +959,14 @@ static HRESULT WINAPI mfattributes_SetBlob(IMFAttributes *iface, REFGUID key, co
 static HRESULT WINAPI mfattributes_SetUnknown(IMFAttributes *iface, REFGUID key, IUnknown *unknown)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), unknown);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), unknown);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_UNKNOWN;
+    attrval.punkVal = unknown;
+    return mfattributes_setitem(This, key, &attrval);
 }
 
 static HRESULT WINAPI mfattributes_LockStore(IMFAttributes *iface)

@@ -434,6 +434,50 @@ static void _check_count(IMFAttributes* obj, ULONG expected, int line)
     ok_(__FILE__,line)(count == expected, "got %d, expected %d.\n", count, expected);
 }
 
+struct unk_impl
+{
+    IUnknown IUnknown_iface;
+    LONG ref;
+};
+
+static inline struct unk_impl *impl_from_IUnknown(IUnknown *iface)
+{
+    return CONTAINING_RECORD(iface, struct unk_impl, IUnknown_iface);
+}
+
+static HRESULT WINAPI unk_QueryInterface(IUnknown *iface, REFIID riid, void **ppv)
+{
+    struct unk_impl *This = impl_from_IUnknown(iface);
+    if(winetest_debug > 1)
+        trace("Call to unk_QueryInterface()\n");
+    *ppv = &This->IUnknown_iface;
+    IUnknown_AddRef(iface);
+    return S_OK;
+}
+
+static ULONG WINAPI unk_AddRef(IUnknown *iface)
+{
+    struct unk_impl *This = impl_from_IUnknown(iface);
+    if(winetest_debug > 1)
+        trace("Call to unk_AddRef()\n");
+    return InterlockedIncrement(&This->ref);
+}
+
+static ULONG WINAPI unk_Release(IUnknown *iface)
+{
+    struct unk_impl *This = impl_from_IUnknown(iface);
+    if(winetest_debug > 1)
+        trace("Call to unk_Release()\n");
+    return InterlockedDecrement(&This->ref);
+}
+
+static const IUnknownVtbl unk_vtbl =
+{
+    unk_QueryInterface,
+    unk_AddRef,
+    unk_Release
+};
+
 static void test_MFCreateAttributes(void)
 {
     IMFAttributes *attributes;
@@ -444,6 +488,9 @@ static void test_MFCreateAttributes(void)
     const static WCHAR stringW[] = {'W','i','n','e',0};
     WCHAR bufferW[256] = {0};
     WCHAR *allacted_string = NULL;
+    IUnknown *unk_value = NULL, *unk = NULL;
+    struct unk_impl unk_obj = {{&unk_vtbl}, 1};
+    struct unk_impl unk_obj2 = {{&unk_vtbl}, 22};
 
     hr = MFCreateAttributes( &attributes, 3 );
     ok(hr == S_OK, "got 0x%08x\n", hr);
@@ -517,6 +564,32 @@ static void test_MFCreateAttributes(void)
     hr = IMFAttributes_GetStringLength(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, &string_length);
     ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_GetStringLength should fail: 0x%08x.\n", hr);
     ok(string_length == 0xdeadbeef, "got wrong string length: %d.\n", string_length);
+
+    hr = IMFAttributes_SetUnknown(attributes, &DUMMY_GUID2, &unk_obj.IUnknown_iface);
+    ok(hr == S_OK, "IMFAttributes_SetUnknown failed: 0x%08x\n", hr);
+    CHECK_COUNT(attributes, 4);
+    ok(unk_obj.ref == 2, "got wrong refcount: %d.\n", unk_obj.ref);
+    hr = IMFAttributes_GetUnknown(attributes, &DUMMY_GUID2, &IID_IUnknown, (void **)&unk_value);
+    ok(hr == S_OK, "IMFAttributes_GetUnknown failed: 0x%08x\n", hr);
+    ok(unk_obj.ref == 3, "got wrong refcount: %d.\n", unk_obj.ref);
+
+    hr = IMFAttributes_SetUnknown(attributes, &DUMMY_GUID2, &unk_obj2.IUnknown_iface);
+    ok(hr == S_OK, "IMFAttributes_SetUnknown failed: 0x%08x\n", hr);
+    CHECK_COUNT(attributes, 4);
+    ok(unk_obj.ref == 2, "got wrong refcount: %d.\n", unk_obj.ref);
+    ok(unk_obj2.ref == 23, "got wrong refcount: %d.\n", unk_obj.ref);
+    unk_value = NULL;
+    hr = IMFAttributes_GetUnknown(attributes, &DUMMY_GUID2, &IID_IUnknown, (void **)&unk_value);
+    ok(hr == S_OK, "IMFAttributes_GetUnknown failed: 0x%08x\n", hr);
+    ok(unk_obj.ref == 2, "got wrong refcount: %d.\n", unk_obj.ref);
+    ok(unk_obj2.ref == 24, "got wrong refcount: %d.\n", unk_obj2.ref);
+
+    hr = IMFAttributes_SetUnknown(attributes, &DUMMY_GUID3, unk);
+    ok(hr == S_OK, "IMFAttributes_SetUnknown failed: 0x%08x\n", hr);
+    CHECK_COUNT(attributes, 5);
+    unk_value = NULL;
+    hr = IMFAttributes_GetUnknown(attributes, &DUMMY_GUID3, &IID_IUnknown, (void **)&unk_value);
+    ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_GetUnknown failed: 0x%08x\n", hr);
 
     IMFAttributes_Release(attributes);
 }
