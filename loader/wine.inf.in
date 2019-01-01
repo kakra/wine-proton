@@ -97,6 +97,7 @@ AddReg=\
     DirectX,\
     Drivers,\
     Fonts,\
+    GameDllOverrides.ntamd64,\
     MCI,\
     Misc,\
     Nls,\
@@ -3771,3 +3772,6 @@ HKCU,Software\Wine\DllOverrides,"msvcr140",0x2,"native,builtin"
 HKCU,Software\Wine\DllOverrides,"ucrtbase",0x2,"native,builtin"
 HKCU,Software\Wine\DllOverrides,"vcomp140",0x2,"native,builtin"
 HKCU,Software\Wine\DllOverrides,"vcruntime140",0x2,"native,builtin"
+
+[GameDllOverrides.ntamd64]
+HKCU,Software\Wine\AppDefaults\SkyrimSE.exe\DllOverrides,"xaudio2_7",0x2,"native"
