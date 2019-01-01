@@ -1,6 +1,6 @@
 MODULE    = mfplat.dll
 IMPORTLIB = mfplat
-IMPORTS   = advapi32 ole32 propsys
+IMPORTS   = advapi32 ole32 propsys shlwapi
 
 C_SRCS = \
 	main.c

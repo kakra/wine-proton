@@ -34,6 +34,7 @@
 #include "mferror.h"
 #include "mfreadwrite.h"
 #include "propvarutil.h"
+#include "strsafe.h"
 
 #include "wine/test.h"
 
@@ -279,7 +280,7 @@ static void test_source_resolver(void)
                                  (void **)&attributes);
     ok(hr == S_OK, "got 0x%08x\n", hr);
     hr = IMFAttributes_SetString(attributes, &MF_BYTESTREAM_CONTENT_TYPE, file_type);
-    todo_wine ok(hr == S_OK, "got 0x%08x\n", hr);
+    ok(hr == S_OK, "got 0x%08x\n", hr);
     IMFAttributes_Release(attributes);
 
     hr = IMFSourceResolver_CreateObjectFromByteStream(
@@ -423,9 +424,12 @@ static void test_MFCreateAttributes(void)
 {
     IMFAttributes *attributes;
     HRESULT hr;
-    UINT32 uint32_value;
+    UINT32 uint32_value, string_length = 0;
     UINT64 uint64_value;
     double double_value;
+    const static WCHAR stringW[] = {'W','i','n','e',0};
+    WCHAR bufferW[256] = {0};
+    WCHAR *allacted_string = NULL;
 
     hr = MFCreateAttributes( &attributes, 3 );
     ok(hr == S_OK, "got 0x%08x\n", hr);
@@ -466,6 +470,43 @@ static void test_MFCreateAttributes(void)
     hr = IMFAttributes_GetDouble(attributes, &GUID_NULL, &double_value);
     ok(hr == S_OK, "IMFAttributes_GetDouble failed: 0x%08x.\n", hr);
     ok(double_value == 22.0, "got wrong value: %f, expected: 22.0.\n", double_value);
+
+    hr = IMFAttributes_SetString(attributes, &DUMMY_GUID1, stringW);
+    ok(hr == S_OK, "IMFAttributes_SetString failed: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 3);
+    hr = IMFAttributes_GetStringLength(attributes, &DUMMY_GUID1, &string_length);
+    ok(hr == S_OK, "IMFAttributes_GetStringLength failed: 0x%08x.\n", hr);
+    ok(string_length == lstrlenW(stringW), "got wrong string length: %d.\n", string_length);
+    string_length = 0xdeadbeef;
+    hr = IMFAttributes_GetAllocatedString(attributes, &DUMMY_GUID1, &allacted_string, &string_length);
+    ok(hr == S_OK, "IMFAttributes_GetAllocatedString failed: 0x%08x.\n", hr);
+    ok(!lstrcmpW(allacted_string, stringW), "got wrong string: \"%s\".\n", wine_dbgstr_w(allacted_string));
+    ok(string_length == lstrlenW(stringW), "got wrong string length: %d.\n", string_length);
+    CoTaskMemFree(allacted_string);
+    string_length = 0xdeadbeef;
+    hr = IMFAttributes_GetString(attributes, &DUMMY_GUID1, bufferW, ARRAY_SIZE(bufferW), &string_length);
+    ok(hr == S_OK, "IMFAttributes_GetString failed: 0x%08x.\n", hr);
+    ok(!lstrcmpW(bufferW, stringW), "got wrong string: \"%s\".\n", wine_dbgstr_w(bufferW));
+    ok(string_length == lstrlenW(stringW), "got wrong string length: %d.\n", string_length);
+    memset(bufferW, 0, sizeof(bufferW));
+
+    hr = IMFAttributes_GetString(attributes, &DUMMY_GUID1, bufferW, ARRAY_SIZE(bufferW), NULL);
+    ok(hr == S_OK, "IMFAttributes_GetString failed: 0x%08x.\n", hr);
+    ok(!lstrcmpW(bufferW, stringW), "got wrong string: \"%s\".\n", wine_dbgstr_w(bufferW));
+    memset(bufferW, 0, sizeof(bufferW));
+
+    hr = IMFAttributes_GetString(attributes, &DUMMY_GUID1, bufferW, 1, NULL);
+    ok(hr == STRSAFE_E_INSUFFICIENT_BUFFER, "IMFAttributes_GetString should fail: 0x%08x.\n", hr);
+    ok(!bufferW[0], "got wrong string: \"%s\".\n", wine_dbgstr_w(bufferW));
+
+    string_length = 0xdeadbeef;
+    hr = IMFAttributes_GetStringLength(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, &string_length);
+    ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_GetStringLength should fail: 0x%08x.\n", hr);
+    ok(string_length == 0xdeadbeef, "got wrong string length: %d.\n", string_length);
+
+    hr = IMFAttributes_SetString(attributes, &DUMMY_GUID1, NULL);
+    ok(hr == E_INVALIDARG, "IMFAttributes_SetString should fail: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 3);
 
     IMFAttributes_Release(attributes);
 }
