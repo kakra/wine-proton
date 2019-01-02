@@ -3318,8 +3318,9 @@ static HMODULE load_driver_module( const WCHAR *name )
     if (nt->OptionalHeader.SectionAlignment < info.PageSize ||
         !(nt->FileHeader.Characteristics & IMAGE_FILE_DLL))
     {
-        DWORD old;
+        DWORD old, old_next_page;
         IMAGE_BASE_RELOCATION *rel, *end;
+        void *page, *next_page = NULL;
 
         if ((rel = RtlImageDirectoryEntryToData( module, TRUE, IMAGE_DIRECTORY_ENTRY_BASERELOC, &size )))
         {
@@ -3327,13 +3328,33 @@ static HMODULE load_driver_module( const WCHAR *name )
             end = (IMAGE_BASE_RELOCATION *)((char *)rel + size);
             while (rel < end && rel->SizeOfBlock)
             {
-                void *page = (char *)module + rel->VirtualAddress;
-                VirtualProtect( page, info.PageSize, PAGE_EXECUTE_READWRITE, &old );
+                page = (char *)module + rel->VirtualAddress;
+                /* if the page protection was already changed in previous interation don't do it again here */
+                if (page == next_page)
+                    old = old_next_page;
+                else
+                {
+                    /* bring back old protection for 'next_page' from previous iteration */
+                    if (old_next_page != PAGE_EXECUTE_READWRITE)
+                        VirtualProtect( next_page, info.PageSize, old_next_page, &old_next_page );
+                    /* change current page protection */
+                    if (!VirtualProtect( page, info.PageSize, PAGE_EXECUTE_READWRITE, &old ))
+                        goto error;
+                }
+
+                /* protect the next page as well because relocation can occur on the page boundary */
+                next_page = (char*)page + info.PageSize;
+                if (!VirtualProtect( next_page, info.PageSize, PAGE_EXECUTE_READWRITE, &old_next_page ))
+                    next_page = NULL;
+
                 rel = LdrProcessRelocationBlock( page, (rel->SizeOfBlock - sizeof(*rel)) / sizeof(USHORT),
                                                  (USHORT *)(rel + 1), delta );
+                /* bring back old protection of current page; next page is handled in the next iteration */
                 if (old != PAGE_EXECUTE_READWRITE) VirtualProtect( page, info.PageSize, old, &old );
                 if (!rel) goto error;
             }
+            if (next_page && old_next_page != PAGE_EXECUTE_READWRITE)
+                VirtualProtect( next_page, info.PageSize, old_next_page, &old_next_page );
             /* make sure we don't try again */
             size = FIELD_OFFSET( IMAGE_NT_HEADERS, OptionalHeader ) + nt->FileHeader.SizeOfOptionalHeader;
             VirtualProtect( nt, size, PAGE_READWRITE, &old );
