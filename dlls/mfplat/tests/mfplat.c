@@ -439,6 +439,7 @@ static void test_MFCreateAttributes(void)
     HRESULT hr;
     UINT32 uint32_value;
     UINT64 uint64_value;
+    double double_value;
 
     hr = MFCreateAttributes( &attributes, 3 );
     ok(hr == S_OK, "got 0x%08x\n", hr);
@@ -470,6 +471,15 @@ static void test_MFCreateAttributes(void)
     hr = IMFAttributes_GetUINT32(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, &uint32_value);
     ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_GetUINT32 should fail: 0x%08x.\n", hr);
     ok(uint32_value == 0xdeadbeef, "got wrong value: %d, expected: 0xdeadbeef.\n", uint32_value);
+
+    hr = IMFAttributes_SetDouble(attributes, &GUID_NULL, 22.0);
+    ok(hr == S_OK, "IMFAttributes_SetDouble failed: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 2);
+
+    double_value = 0xdeadbeef;
+    hr = IMFAttributes_GetDouble(attributes, &GUID_NULL, &double_value);
+    ok(hr == S_OK, "IMFAttributes_GetDouble failed: 0x%08x.\n", hr);
+    ok(double_value == 22.0, "got wrong value: %f, expected: 22.0.\n", double_value);
 
     IMFAttributes_Release(attributes);
 }
