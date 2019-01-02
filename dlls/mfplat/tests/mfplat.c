@@ -414,6 +414,8 @@ static void test_MFCreateAttributes(void)
     IMFAttributes *attributes;
     HRESULT hr;
     UINT32 count;
+    UINT32 uint32_value;
+    UINT64 uint64_value;
 
     hr = MFCreateAttributes( &attributes, 3 );
     ok(hr == S_OK, "got 0x%08x\n", hr);
@@ -423,12 +425,34 @@ static void test_MFCreateAttributes(void)
     todo_wine ok(hr == S_OK, "got 0x%08x\n", hr);
     ok(count == 0, "got %d\n", count);
 
-    hr = IMFAttributes_SetUINT32(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 0);
-    todo_wine ok(hr == S_OK, "got 0x%08x\n", hr);
+    hr = IMFAttributes_SetUINT32(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 123);
+    ok(hr == S_OK, "IMFAttributes_SetUINT32 failed: 0x%08x.\n", hr);
 
     hr = IMFAttributes_GetCount(attributes, &count);
     todo_wine ok(hr == S_OK, "got 0x%08x\n", hr);
     todo_wine ok(count == 1, "got %d\n", count);
+
+    uint32_value = 0xdeadbeef;
+    hr = IMFAttributes_GetUINT32(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, &uint32_value);
+    ok(hr == S_OK, "IMFAttributes_GetUINT32 failed: 0x%08x.\n", hr);
+    ok(uint32_value == 123, "got wrong value: %d, expected: 123.\n", uint32_value);
+
+    uint64_value = 0xdeadbeef;
+    hr = IMFAttributes_GetUINT64(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, &uint64_value);
+    ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_GetUINT64 should fail: 0x%08x.\n", hr);
+    ok(uint64_value == 0xdeadbeef, "got wrong value: %lld, expected: 0xdeadbeef.\n", uint64_value);
+
+    hr = IMFAttributes_SetUINT64(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, 65536);
+    ok(hr == S_OK, "IMFAttributes_SetUINT64 failed: 0x%08x.\n", hr);
+
+    hr = IMFAttributes_GetUINT64(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, &uint64_value);
+    ok(hr == S_OK, "IMFAttributes_GetUINT64 failed: 0x%08x.\n", hr);
+    ok(uint64_value == 65536, "got wrong value: %lld, expected: 65536.\n", uint64_value);
+
+    uint32_value = 0xdeadbeef;
+    hr = IMFAttributes_GetUINT32(attributes, &MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, &uint32_value);
+    ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_GetUINT32 should fail: 0x%08x.\n", hr);
+    ok(uint32_value == 0xdeadbeef, "got wrong value: %d, expected: 0xdeadbeef.\n", uint32_value);
 
     IMFAttributes_Release(attributes);
 }
