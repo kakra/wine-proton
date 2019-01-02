@@ -49,15 +49,6 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
     return TRUE;
 }
 
-
-HRESULT WINAPI MFCreateSourceReaderFromMediaSource(IMFMediaSource *source, IMFAttributes *attributes,
-                                                   IMFSourceReader **reader)
-{
-    FIXME("%p %p %p stub.\n", source, attributes, reader);
-
-    return E_NOTIMPL;
-}
-
 HRESULT WINAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, void **ppv)
 {
     FIXME("(%s,%s,%p)\n", debugstr_guid(rclsid), debugstr_guid(riid), ppv);
@@ -238,6 +229,24 @@ HRESULT WINAPI MFCreateSourceReaderFromByteStream(IMFByteStream *stream, IMFAttr
     TRACE("%p, %p, %p\n", stream, attributes, reader);
 
     object = HeapAlloc( GetProcessHeap(), 0, sizeof(*object) );
+    if(!object)
+        return E_OUTOFMEMORY;
+
+    object->ref = 1;
+    object->IMFSourceReader_iface.lpVtbl = &srcreader_vtbl;
+
+    *reader = &object->IMFSourceReader_iface;
+    return S_OK;
+}
+
+HRESULT WINAPI MFCreateSourceReaderFromMediaSource(IMFMediaSource *source, IMFAttributes *attributes,
+                                                   IMFSourceReader **reader)
+{
+    srcreader *object;
+
+    TRACE("(%p %p %p)\n", source, attributes, reader);
+
+    object = HeapAlloc(GetProcessHeap(), 0, sizeof(*object));
     if(!object)
         return E_OUTOFMEMORY;
 
