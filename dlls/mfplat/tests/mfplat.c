@@ -858,10 +858,10 @@ static void test_MFSample(void)
 
 static void test_IMFAttributes_item(void)
 {
-    IMFAttributes *attributes;
+    IMFAttributes *attributes, *attributes1;
     HRESULT hr;
     PROPVARIANT propvar, ret_propvar;
-    GUID key;
+    GUID key, ret_key;
 
     hr = MFCreateAttributes(&attributes, 0);
     ok(hr == S_OK, "MFCreateAttributes failed: 0x%08x.\n", hr);
@@ -951,9 +951,45 @@ static void test_IMFAttributes_item(void)
     ok(hr == S_OK, "IMFAttributes_DeleteItem failed: 0x%08x.\n", hr);
     CHECK_COUNT(attributes, 2);
 
+    hr = MFCreateAttributes(&attributes1, 0);
+    ok(hr == S_OK, "MFCreateAttributes failed: 0x%08x.\n", hr);
+    hr = IMFAttributes_CopyAllItems(attributes, attributes1);
+    ok(hr == S_OK, "IMFAttributes_CopyAllItems failed: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 2);
+    CHECK_COUNT(attributes1, 2);
+    if(is_prewin8())
+        hr = IMFAttributes_GetItemByIndex(attributes1, 1, &ret_key, &ret_propvar);
+    else
+        hr = IMFAttributes_GetItemByIndex(attributes1, 0, &ret_key, &ret_propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    hr = IMFAttributes_GetItemByIndex(attributes, 1, &key, &propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "got wrong property.\n");
+    ok(IsEqualIID(&key, &ret_key), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
+    PropVariantClear(&propvar);
+    PropVariantClear(&ret_propvar);
+    if(is_prewin8())
+        hr = IMFAttributes_GetItemByIndex(attributes1, 0, &ret_key, &ret_propvar);
+    else
+        hr = IMFAttributes_GetItemByIndex(attributes1, 1, &ret_key, &ret_propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    hr = IMFAttributes_GetItemByIndex(attributes, 0, &key, &propvar);
+    ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "got wrong property.\n");
+    ok(IsEqualIID(&key, &ret_key), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
+    PropVariantClear(&propvar);
+    PropVariantClear(&ret_propvar);
+
     hr = IMFAttributes_DeleteAllItems(attributes);
     ok(hr == S_OK, "IMFAttributes_DeleteAllItems: 0x%08x.\n", hr);
     CHECK_COUNT(attributes, 0);
+    CHECK_COUNT(attributes1, 2);
+
+    hr = IMFAttributes_CopyAllItems(attributes, attributes1);
+    ok(hr == S_OK, "IMFAttributes_CopyAllItems failed: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 0);
+    CHECK_COUNT(attributes1, 0);
+    IMFAttributes_Release(attributes1);
 
     IMFAttributes_Release(attributes);
 }

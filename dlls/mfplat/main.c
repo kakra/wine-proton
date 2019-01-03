@@ -1033,10 +1033,35 @@ static HRESULT WINAPI mfattributes_GetItemByIndex(IMFAttributes *iface, UINT32 i
 static HRESULT WINAPI mfattributes_CopyAllItems(IMFAttributes *iface, IMFAttributes *dest)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    HRESULT hr;
+    int i;
 
-    FIXME("%p, %p\n", This, dest);
+    TRACE("(%p, %p)\n", This, dest);
 
-    return E_NOTIMPL;
+    EnterCriticalSection(&This->lock);
+
+    hr = IMFAttributes_DeleteAllItems(dest);
+    for(i = 0; i < This->count; i++)
+    {
+        PROPVARIANT propvar;
+        GUID key;
+
+        PropVariantInit(&propvar);
+        hr = IMFAttributes_GetItemByIndex(iface, i, &key, &propvar);
+        if(FAILED(hr))
+        {
+            PropVariantClear(&propvar);
+            break;
+        }
+        hr = IMFAttributes_SetItem(dest, &key, &propvar);
+        PropVariantClear(&propvar);
+        if(FAILED(hr))
+            break;
+    }
+
+    LeaveCriticalSection(&This->lock);
+
+    return hr;
 }
 
 static const IMFAttributesVtbl mfattributes_vtbl =
