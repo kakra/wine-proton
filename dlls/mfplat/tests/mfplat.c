@@ -951,6 +951,10 @@ static void test_IMFAttributes_item(void)
     ok(hr == S_OK, "IMFAttributes_DeleteItem failed: 0x%08x.\n", hr);
     CHECK_COUNT(attributes, 2);
 
+    hr = IMFAttributes_DeleteAllItems(attributes);
+    ok(hr == S_OK, "IMFAttributes_DeleteAllItems: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 0);
+
     IMFAttributes_Release(attributes);
 }
 
