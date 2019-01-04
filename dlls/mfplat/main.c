@@ -661,10 +661,18 @@ static HRESULT WINAPI mfattributes_GetDouble(IMFAttributes *iface, REFGUID key, 
 static HRESULT WINAPI mfattributes_GetGUID(IMFAttributes *iface, REFGUID key, GUID *value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), value);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), value);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_CLSID;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+        hres = PropVariantToGUID(&attrval, value);
+
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetStringLength(IMFAttributes *iface, REFGUID key, UINT32 *length)
@@ -935,10 +943,15 @@ static HRESULT WINAPI mfattributes_SetDouble(IMFAttributes *iface, REFGUID key, 
 static HRESULT WINAPI mfattributes_SetGUID(IMFAttributes *iface, REFGUID key, REFGUID value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %s\n", This, debugstr_guid(key), debugstr_guid(value));
+    TRACE("(%p, %s, %s)\n", This, debugstr_guid(key), debugstr_guid(value));
 
-    return E_NOTIMPL;
+    InitPropVariantFromCLSID(value, &attrval);
+    hres = mfattributes_setitem(This, key, &attrval);
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_SetString(IMFAttributes *iface, REFGUID key, const WCHAR *value)

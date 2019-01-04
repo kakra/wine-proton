@@ -353,7 +353,7 @@ if(0)
     ok(hr == S_OK, "got 0x%08x\n", hr);
 
     hr = IMFMediaType_SetGUID(mediatype, &MF_MT_MAJOR_TYPE, &MFMediaType_Video);
-    todo_wine ok(hr == S_OK, "got 0x%08x\n", hr);
+    ok(hr == S_OK, "got 0x%08x\n", hr);
 
     IMFMediaType_Release(mediatype);
 
@@ -491,6 +491,7 @@ static void test_MFCreateAttributes(void)
     IUnknown *unk_value = NULL, *unk = NULL;
     struct unk_impl unk_obj = {{&unk_vtbl}, 1};
     struct unk_impl unk_obj2 = {{&unk_vtbl}, 22};
+    GUID guid_value;
 
     hr = MFCreateAttributes( &attributes, 3 );
     ok(hr == S_OK, "got 0x%08x\n", hr);
@@ -590,6 +591,13 @@ static void test_MFCreateAttributes(void)
     unk_value = NULL;
     hr = IMFAttributes_GetUnknown(attributes, &DUMMY_GUID3, &IID_IUnknown, (void **)&unk_value);
     ok(hr == MF_E_INVALIDTYPE, "IMFAttributes_GetUnknown failed: 0x%08x\n", hr);
+
+    hr = IMFAttributes_SetGUID(attributes, &DUMMY_GUID3, &MFT_CATEGORY_OTHER);
+    ok(hr == S_OK, "IMFAttributes_SetGUID failed: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 5);
+    hr = IMFAttributes_GetGUID(attributes, &DUMMY_GUID3, &guid_value);
+    ok(hr == S_OK, "IMFAttributes_GetGUID failed: 0x%08x.\n", hr);
+    ok(IsEqualGUID(&MFT_CATEGORY_OTHER, &guid_value), "got wrong guid: %s.\n", wine_dbgstr_guid(&guid_value));
 
     IMFAttributes_Release(attributes);
 }
