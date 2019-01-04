@@ -31,6 +31,7 @@
 #include "mfapi.h"
 #include "mfidl.h"
 #include "mferror.h"
+#include "propvarutil.h"
 
 #include "wine/heap.h"
 #include "wine/debug.h"
@@ -547,7 +548,7 @@ static int mfattributes_finditem(mfattributes *object, REFGUID key, struct mfatt
     return index;
 }
 
-static HRESULT mfattributes_getitem(mfattributes *object, REFGUID key, PROPVARIANT *value)
+static HRESULT mfattributes_getitem(mfattributes *object, REFGUID key, PROPVARIANT *value, BOOL verify_type)
 {
     HRESULT hres;
     struct mfattribute *attribute = NULL;
@@ -558,7 +559,12 @@ static HRESULT mfattributes_getitem(mfattributes *object, REFGUID key, PROPVARIA
     if(!attribute)
         hres = MF_E_ATTRIBUTENOTFOUND;
     else
-        hres = PropVariantCopy(value, &attribute->value);
+    {
+        if(verify_type && (attribute->value.vt != value->vt))
+            hres = MF_E_INVALIDTYPE;
+        else
+            hres = PropVariantCopy(value, &attribute->value);
+    }
 
     LeaveCriticalSection(&object->lock);
 
@@ -571,7 +577,7 @@ static HRESULT WINAPI mfattributes_GetItem(IMFAttributes *iface, REFGUID key, PR
 
     TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), value);
 
-    return mfattributes_getitem(This, key, value);
+    return mfattributes_getitem(This, key, value, FALSE);
 }
 
 static HRESULT WINAPI mfattributes_GetItemType(IMFAttributes *iface, REFGUID key, MF_ATTRIBUTE_TYPE *type)
@@ -605,19 +611,33 @@ static HRESULT WINAPI mfattributes_Compare(IMFAttributes *iface, IMFAttributes *
 static HRESULT WINAPI mfattributes_GetUINT32(IMFAttributes *iface, REFGUID key, UINT32 *value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), value);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), value);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_UI4;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+        hres = PropVariantToUInt32(&attrval, value);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetUINT64(IMFAttributes *iface, REFGUID key, UINT64 *value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), value);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), value);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_UI8;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+        hres = PropVariantToUInt64(&attrval, value);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetDouble(IMFAttributes *iface, REFGUID key, double *value)
@@ -820,19 +840,27 @@ static HRESULT WINAPI mfattributes_DeleteAllItems(IMFAttributes *iface)
 static HRESULT WINAPI mfattributes_SetUINT32(IMFAttributes *iface, REFGUID key, UINT32 value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
 
-    FIXME("%p, %s, %d\n", This, debugstr_guid(key), value);
+    TRACE("(%p, %s, %d)\n", This, debugstr_guid(key), value);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_UI4;
+    attrval.ulVal = value;
+    return mfattributes_setitem(This, key, &attrval);
 }
 
 static HRESULT WINAPI mfattributes_SetUINT64(IMFAttributes *iface, REFGUID key, UINT64 value)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
 
-    FIXME("%p, %s, %s\n", This, debugstr_guid(key), wine_dbgstr_longlong(value));
+    FIXME("(%p, %s, %s)\n", This, debugstr_guid(key), wine_dbgstr_longlong(value));
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_UI8;
+    attrval.uhVal.QuadPart = value;
+    return mfattributes_setitem(This, key, &attrval);
 }
 
 static HRESULT WINAPI mfattributes_SetDouble(IMFAttributes *iface, REFGUID key, double value)
