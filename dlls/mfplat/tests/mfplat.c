@@ -782,9 +782,9 @@ static void test_IMFAttributes_item(void)
         hr = IMFAttributes_GetItemByIndex(attributes, 1, &key, &ret_propvar);
     else
         hr = IMFAttributes_GetItemByIndex(attributes, 0, &key, &ret_propvar);
-    todo_wine ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
-    todo_wine ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "got wrong property.\n");
-    todo_wine ok(IsEqualIID(&key, &DUMMY_GUID3), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
+    ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "got wrong property.\n");
+    ok(IsEqualIID(&key, &DUMMY_GUID3), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
     PropVariantClear(&ret_propvar);
     PropVariantClear(&propvar);
     propvar.vt = MF_ATTRIBUTE_UINT64;
@@ -793,9 +793,9 @@ static void test_IMFAttributes_item(void)
         hr = IMFAttributes_GetItemByIndex(attributes, 0, &key, &ret_propvar);
     else
         hr = IMFAttributes_GetItemByIndex(attributes, 1, &key, &ret_propvar);
-    todo_wine ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
-    todo_wine ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "got wrong property.\n");
-    todo_wine ok(IsEqualIID(&key, &DUMMY_GUID1), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
+    ok(hr == S_OK, "IMFAttributes_GetItemByIndex failed: 0x%08x.\n", hr);
+    ok(!PropVariantCompareEx(&propvar, &ret_propvar, 0, 0), "got wrong property.\n");
+    ok(IsEqualIID(&key, &DUMMY_GUID1), "got wrong key: %s.\n", wine_dbgstr_guid(&key));
 
     hr = IMFAttributes_DeleteItem(attributes, &DUMMY_GUID2);
     ok(hr == S_OK, "IMFAttributes_DeleteItem failed: 0x%08x.\n", hr);

@@ -914,9 +914,16 @@ static HRESULT WINAPI mfattributes_GetItemByIndex(IMFAttributes *iface, UINT32 i
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
 
-    FIXME("%p, %d, %p, %p\n", This, index, key, value);
+    TRACE("(%p, %d, %p, %p)\n", This, index, key, value);
 
-    return E_NOTIMPL;
+    EnterCriticalSection(&This->lock);
+
+    *key = This->attributes[index]->key;
+    PropVariantCopy(value, &This->attributes[index]->value);
+
+    LeaveCriticalSection(&This->lock);
+
+    return S_OK;
 }
 
 static HRESULT WINAPI mfattributes_CopyAllItems(IMFAttributes *iface, IMFAttributes *dest)
