@@ -619,6 +619,13 @@ static void test_PropVariantToGUID(void)
     ok(hres == S_OK, "PropVariantToGUID failed %x\n", hres);
     ok(!memcmp(&dummy_guid, &guid, sizeof(GUID)), "incorrect GUID created: %s\n", wine_dbgstr_guid(&guid));
     PropVariantClear(&propvar);
+
+    memset(&guid, 0, sizeof(guid));
+    InitPropVariantFromCLSID(&dummy_guid, &propvar);
+    hres = PropVariantToGUID(&propvar, &guid);
+    ok(hres == S_OK, "PropVariantToGUID failed %x\n", hres);
+    ok(!memcmp(&dummy_guid, &guid, sizeof(GUID)), "incorrect GUID created: %s\n", wine_dbgstr_guid(&guid));
+    PropVariantClear(&propvar);
 }
 
 static void test_PropVariantToStringAlloc(void)
