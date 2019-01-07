@@ -306,6 +306,20 @@ HRESULT WINAPI PropVariantToBoolean(REFPROPVARIANT propvarIn, BOOL *ret)
     return hr;
 }
 
+HRESULT WINAPI PropVariantToBuffer(REFPROPVARIANT propvarIn, void *ret, UINT cb)
+{
+    TRACE("(%p, %p, %d)\n", propvarIn, ret, cb);
+
+    if(propvarIn->vt != (VT_VECTOR | VT_UI1))
+        return E_INVALIDARG;
+
+    if(cb > propvarIn->u.caub.cElems)
+        return E_FAIL;
+
+    memcpy(ret, propvarIn->u.caub.pElems, cb);
+    return S_OK;
+}
+
 HRESULT WINAPI PropVariantToString(REFPROPVARIANT propvarIn, PWSTR ret, UINT cch)
 {
     HRESULT hr = S_OK;

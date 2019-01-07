@@ -1397,6 +1397,45 @@ static void test_PropVariantToString(void)
     PropVariantClear(&propvar);
 }
 
+static void test_PropVariantToBuffer(void)
+{
+    PROPVARIANT propvar;
+    HRESULT hr;
+    UINT8 data[] = {1,2,3,4,5,6,7,8,9,10};
+    UINT8 buffer[256];
+    static CHAR string[] = {'T','e','s','t',0};
+
+    hr = InitPropVariantFromBuffer(data, 10, &propvar);
+    ok(hr == S_OK, "InitVariantFromBuffer failed 0x%08x.\n", hr);
+    hr = PropVariantToBuffer(&propvar, buffer, 10);
+    ok(hr == S_OK, "PropVariantToBuffer fail: 0x%08x.\n", hr);
+    ok(!memcmp(buffer, data, 10) && !buffer[10], "got wrong buffer.\n");
+    memset(buffer, 0, sizeof(buffer));
+    PropVariantClear(&propvar);
+
+    hr = InitPropVariantFromBuffer(data, 10, &propvar);
+    ok(hr == S_OK, "InitVariantFromBuffer failed 0x%08x.\n", hr);
+    hr = PropVariantToBuffer(&propvar, buffer, 11);
+    ok(hr == E_FAIL, "PropVariantToBuffer fail: 0x%08x.\n", hr);
+    memset(buffer, 0, sizeof(buffer));
+    PropVariantClear(&propvar);
+
+    hr = InitPropVariantFromBuffer(data, 10, &propvar);
+    ok(hr == S_OK, "InitVariantFromBuffer failed 0x%08x.\n", hr);
+    hr = PropVariantToBuffer(&propvar, buffer, 9);
+    ok(hr == S_OK, "PropVariantToBuffer fail: 0x%08x.\n", hr);
+    ok(!memcmp(buffer, data, 9) && !buffer[9], "got wrong buffer.\n");
+    memset(buffer, 0, sizeof(buffer));
+    PropVariantClear(&propvar);
+
+    PropVariantInit(&propvar);
+    propvar.vt = VT_LPSTR;
+    U(propvar).pszVal = string;
+    hr = PropVariantToBuffer(&propvar, buffer, 10);
+    ok(hr == E_INVALIDARG, "PropVariantToBuffer should fail: 0x%08x.\n", hr);
+    PropVariantClear(&propvar);
+}
+
 START_TEST(propsys)
 {
     test_PSStringFromPropertyKey();
@@ -1414,4 +1453,5 @@ START_TEST(propsys)
     test_InitPropVariantFromCLSID();
     test_PropVariantToDouble();
     test_PropVariantToString();
+    test_PropVariantToBuffer();
 }
