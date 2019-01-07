@@ -54,6 +54,7 @@ DEFINE_GUID(DUMMY_CLSID, 0x12345678,0x1234,0x1234,0x12,0x13,0x14,0x15,0x16,0x17,
 DEFINE_GUID(DUMMY_GUID1, 0x12345678,0x1234,0x1234,0x21,0x21,0x21,0x21,0x21,0x21,0x21,0x21);
 DEFINE_GUID(DUMMY_GUID2, 0x12345678,0x1234,0x1234,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22);
 DEFINE_GUID(DUMMY_GUID3, 0x12345678,0x1234,0x1234,0x23,0x23,0x23,0x23,0x23,0x23,0x23,0x23);
+DEFINE_GUID(DUMMY_GUID4, 0x12345678,0x1234,0x1234,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24);
 
 static const WCHAR mp4file[] = {'t','e','s','t','.','m','p','4',0};
 
@@ -482,7 +483,7 @@ static void test_MFCreateAttributes(void)
 {
     IMFAttributes *attributes;
     HRESULT hr;
-    UINT32 uint32_value, string_length = 0;
+    UINT32 uint32_value, string_length = 0, size = 0;
     UINT64 uint64_value;
     double double_value;
     const static WCHAR stringW[] = {'W','i','n','e',0};
@@ -492,6 +493,7 @@ static void test_MFCreateAttributes(void)
     struct unk_impl unk_obj = {{&unk_vtbl}, 1};
     struct unk_impl unk_obj2 = {{&unk_vtbl}, 22};
     GUID guid_value;
+    UINT8 blob[] = {0,1,2,3,4,5}, blob_value[256] = {0}, *blob_buf = NULL;
 
     hr = MFCreateAttributes( &attributes, 3 );
     ok(hr == S_OK, "got 0x%08x\n", hr);
@@ -598,6 +600,29 @@ static void test_MFCreateAttributes(void)
     hr = IMFAttributes_GetGUID(attributes, &DUMMY_GUID3, &guid_value);
     ok(hr == S_OK, "IMFAttributes_GetGUID failed: 0x%08x.\n", hr);
     ok(IsEqualGUID(&MFT_CATEGORY_OTHER, &guid_value), "got wrong guid: %s.\n", wine_dbgstr_guid(&guid_value));
+
+    hr = IMFAttributes_SetBlob(attributes, &DUMMY_GUID4, blob, sizeof(blob));
+    ok(hr == S_OK, "IMFAttributes_SetBlob failed: 0x%08x.\n", hr);
+    CHECK_COUNT(attributes, 6);
+    hr = IMFAttributes_GetBlobSize(attributes, &DUMMY_GUID4, &size);
+    ok(hr == S_OK, "IMFAttributes_GetBlobSize failed: 0x%08x.\n", hr);
+    ok(size == sizeof(blob), "got wrong blob size: %d.\n", size);
+    size = 0;
+    hr = IMFAttributes_GetBlob(attributes, &DUMMY_GUID4, blob_value, sizeof(blob_value), &size);
+    ok(hr == S_OK, "IMFAttributes_GetBlob failed: 0x%08x.\n", hr);
+    ok(size == sizeof(blob), "got wrong blob size: %d.\n", size);
+    ok(!memcmp(blob_value, blob, size), "got wrong buffer.\n");
+    memset(blob_value, 0, sizeof(blob_value));
+    size = 0;
+    hr = IMFAttributes_GetAllocatedBlob(attributes, &DUMMY_GUID4, &blob_buf, &size);
+    ok(hr == S_OK, "IMFAttributes_GetAllocatedBlob failed: 0x%08x.\n", hr);
+    ok(size == sizeof(blob), "got wrong blob size: %d.\n", size);
+    ok(!memcmp(blob_buf, blob, size), "got wrong buffer.\n");
+    CoTaskMemFree(blob_buf);
+
+    hr = IMFAttributes_GetBlob(attributes, &DUMMY_GUID4, blob_value, sizeof(blob) - 1, NULL);
+    ok(hr == E_NOT_SUFFICIENT_BUFFER, "IMFAttributes_GetBlob failed: 0x%08x.\n", hr);
+    memset(blob_value, 0, sizeof(blob_value));
 
     IMFAttributes_Release(attributes);
 }

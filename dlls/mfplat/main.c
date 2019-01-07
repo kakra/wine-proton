@@ -735,29 +735,67 @@ static HRESULT WINAPI mfattributes_GetAllocatedString(IMFAttributes *iface, REFG
 static HRESULT WINAPI mfattributes_GetBlobSize(IMFAttributes *iface, REFGUID key, UINT32 *size)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    UINT8 *buf;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p\n", This, debugstr_guid(key), size);
+    TRACE("(%p, %s, %p)\n", This, debugstr_guid(key), size);
 
-    return E_NOTIMPL;
+    hres = IMFAttributes_GetAllocatedBlob(iface, key, &buf, size);
+    CoTaskMemFree(buf);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetBlob(IMFAttributes *iface, REFGUID key, UINT8 *buf,
-                UINT32 bufsize, UINT32 *blobsize)
+                                           UINT32 bufsize, UINT32 *blobsize)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p, %d, %p\n", This, debugstr_guid(key), buf, bufsize, blobsize);
+    TRACE("(%p, %s, %p, %d, %p)\n", This, debugstr_guid(key), buf, bufsize, blobsize);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_VECTOR | VT_UI1;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+    {
+        if(attrval.caub.cElems > bufsize)
+            hres = E_NOT_SUFFICIENT_BUFFER;
+        else
+            hres = PropVariantToBuffer(&attrval, buf, attrval.caub.cElems);
+
+        if(blobsize)
+            *blobsize = attrval.caub.cElems;
+    }
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetAllocatedBlob(IMFAttributes *iface, REFGUID key, UINT8 **buf, UINT32 *size)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p, %p\n", This, debugstr_guid(key), buf, size);
+    TRACE("(%p, %s, %p, %p)\n", This, debugstr_guid(key), buf, size);
 
-    return E_NOTIMPL;
+    PropVariantInit(&attrval);
+    attrval.vt = VT_VECTOR | VT_UI1;
+    hres = mfattributes_getitem(This, key, &attrval, TRUE);
+    if(SUCCEEDED(hres))
+    {
+        int cb = attrval.caub.cElems;
+        *buf = CoTaskMemAlloc(cb);
+        if(!*buf)
+        {
+            PropVariantClear(&attrval);
+            return E_OUTOFMEMORY;
+        }
+        hres = PropVariantToBuffer(&attrval, *buf, cb);
+        *size = cb;
+    }
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_GetUnknown(IMFAttributes *iface, REFGUID key, REFIID riid, void **ppv)
@@ -974,10 +1012,15 @@ static HRESULT WINAPI mfattributes_SetString(IMFAttributes *iface, REFGUID key, 
 static HRESULT WINAPI mfattributes_SetBlob(IMFAttributes *iface, REFGUID key, const UINT8 *buf, UINT32 size)
 {
     mfattributes *This = impl_from_IMFAttributes(iface);
+    PROPVARIANT attrval;
+    HRESULT hres;
 
-    FIXME("%p, %s, %p, %d\n", This, debugstr_guid(key), buf, size);
+    TRACE("(%p, %s, %p, %d)\n", This, debugstr_guid(key), buf, size);
 
-    return E_NOTIMPL;
+    InitPropVariantFromBuffer(buf, size, &attrval);
+    hres = mfattributes_setitem(This, key, &attrval);
+    PropVariantClear(&attrval);
+    return hres;
 }
 
 static HRESULT WINAPI mfattributes_SetUnknown(IMFAttributes *iface, REFGUID key, IUnknown *unknown)
