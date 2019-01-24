@@ -1,0 +1,4 @@
+MODULE = mfmp4srcsnk.dll
+
+C_SRCS = \
+	main.c
