@@ -1359,6 +1359,7 @@ enable_mciseq
 enable_mciwave
 enable_mf
 enable_mf3216
+enable_mfasfsrcsnk
 enable_mfplat
 enable_mfreadwrite
 enable_mfuuid
@@ -19757,6 +19758,7 @@ wine_fn_config_makefile dlls/mciwave enable_mciwave
 wine_fn_config_makefile dlls/mf enable_mf
 wine_fn_config_makefile dlls/mf/tests enable_tests
 wine_fn_config_makefile dlls/mf3216 enable_mf3216
+wine_fn_config_makefile dlls/mfasfsrcsnk enable_mfasfsrcsnk
 wine_fn_config_makefile dlls/mfplat enable_mfplat
 wine_fn_config_makefile dlls/mfplat/tests enable_tests
 wine_fn_config_makefile dlls/mfreadwrite enable_mfreadwrite
