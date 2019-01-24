@@ -1,5 +1,5 @@
-@ stub DllCanUnloadNow
-@ stub DllGetClassObject
+@ stdcall -private DllCanUnloadNow()
+@ stdcall -private  DllGetClassObject(ptr ptr ptr)
 @ stub MFCreateASFContentInfo
 @ stub MFCreateASFIndexer
 @ stub MFCreateASFIndexerByteStream

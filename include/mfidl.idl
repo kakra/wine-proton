@@ -305,6 +305,34 @@ interface IMFSequencerSource : IUnknown
 
 };
 
+[
+    object,
+    uuid(bb420aa4-765b-4a1f-91fe-d6a8a143924c),
+    local
+]
+interface IMFByteStreamHandler : IUnknown
+{
+    HRESULT BeginCreateObject(
+        [in]  IMFByteStream *bytestream,
+        [in]  LPCWSTR url,
+        [in]  DWORD flags,
+        [in]  IPropertyStore *props,
+        [out] IUnknown **cancel_cookie,
+        [in]  IMFAsyncCallback *callback,
+        [in]  IUnknown *state);
+
+    HRESULT EndCreateObject(
+        [in]  IMFAsyncResult *result,
+        [out] MF_OBJECT_TYPE *object_type,
+        [out] IUnknown **object);
+
+    HRESULT CancelObjectCreation(
+        [in] IUnknown *cancel_cookie);
+
+    HRESULT GetMaxNumberOfBytesRequiredForResolution(
+        [out] QWORD *bytes);
+}
+
 cpp_quote("HRESULT WINAPI MFCreateMediaSession(IMFAttributes *config, IMFMediaSession **session);")
 cpp_quote("HRESULT WINAPI MFCreateMFByteStreamOnStream(IStream *stream, IMFByteStream **bytestream);" )
 cpp_quote("HRESULT WINAPI MFCreateSourceResolver(IMFSourceResolver **resolver);")
