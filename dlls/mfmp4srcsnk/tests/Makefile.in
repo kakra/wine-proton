@@ -1,0 +1,5 @@
+TESTDLL = mfmp4srcsnk.dll
+IMPORTS = ole32
+
+C_SRCS = \
+	mfmp4srcsnk.c

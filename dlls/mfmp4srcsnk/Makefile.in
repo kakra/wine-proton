@@ -2,3 +2,5 @@ MODULE = mfmp4srcsnk.dll
 
 C_SRCS = \
 	main.c
+
+IDL_SRCS = mfmp4srcsnk.idl
