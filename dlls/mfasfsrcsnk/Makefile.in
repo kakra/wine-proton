@@ -2,3 +2,5 @@ MODULE = mfasfsrcsnk.dll
 
 C_SRCS = \
 	main.c
+
+IDL_SRCS = mfasfsrcsnk.idl
