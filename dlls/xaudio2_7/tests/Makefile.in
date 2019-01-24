@@ -1,5 +1,0 @@
-TESTDLL = xaudio2_7.dll
-IMPORTS = ole32
-
-C_SRCS = \
-	xaudio2.c
