@@ -255,9 +255,15 @@ static HRESULT create_source_reader_from_source(IMFMediaSource *source, IMFAttri
 static HRESULT create_source_reader_from_stream(IMFByteStream *stream, IMFAttributes *attributes,
         REFIID riid, void **out)
 {
-    /* FIXME: resolve bytestream to media source */
+    IMFSourceResolver *resolver = NULL;
+    MF_OBJECT_TYPE object_type;
+    HRESULT hr;
 
-    return create_source_reader_from_source(NULL, attributes, riid, out);
+    MFCreateSourceResolver(&resolver);
+    hr = IMFSourceResolver_CreateObjectFromByteStream(resolver, stream, NULL, MF_RESOLUTION_MEDIASOURCE,
+                                                      NULL, &object_type, (IUnknown **)out);
+    IMFSourceResolver_Release(resolver);
+    return hr;
 }
 
 static HRESULT WINAPI sink_writer_QueryInterface(IMFSinkWriter *iface, REFIID riid, void **out)
