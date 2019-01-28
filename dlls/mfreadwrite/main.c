@@ -27,6 +27,7 @@
 #include "ole2.h"
 #include "rpcproxy.h"
 #include "mfreadwrite.h"
+#include "mfidl.h"
 
 #include "wine/debug.h"
 
@@ -224,19 +225,17 @@ struct IMFSourceReaderVtbl srcreader_vtbl =
 
 HRESULT WINAPI MFCreateSourceReaderFromByteStream(IMFByteStream *stream, IMFAttributes *attributes, IMFSourceReader **reader)
 {
-    srcreader *object;
+    IMFSourceResolver *resolver = NULL;
+    MF_OBJECT_TYPE object_type;
+    HRESULT hr;
 
     TRACE("%p, %p, %p\n", stream, attributes, reader);
 
-    object = HeapAlloc( GetProcessHeap(), 0, sizeof(*object) );
-    if(!object)
-        return E_OUTOFMEMORY;
-
-    object->ref = 1;
-    object->IMFSourceReader_iface.lpVtbl = &srcreader_vtbl;
-
-    *reader = &object->IMFSourceReader_iface;
-    return S_OK;
+    MFCreateSourceResolver(&resolver);
+    hr = IMFSourceResolver_CreateObjectFromByteStream(resolver, stream, NULL, MF_RESOLUTION_MEDIASOURCE,
+                                                      NULL, &object_type, (IUnknown **)reader);
+    IMFSourceResolver_Release(resolver);
+    return hr;
 }
 
 HRESULT WINAPI MFCreateSourceReaderFromMediaSource(IMFMediaSource *source, IMFAttributes *attributes,
