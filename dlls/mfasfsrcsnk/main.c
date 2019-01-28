@@ -26,6 +26,7 @@
 
 #include <initguid.h>
 #include <mfidl.h>
+#include "mfreadwrite.h"
 
 #include "windef.h"
 #include "winbase.h"
@@ -41,7 +42,166 @@ typedef struct _ASFByteStreamHandlerImpl
 {
     IMFByteStreamHandler IMFByteStreamHandler_iface;
     LONG ref;
+
+    IMFSourceReader *creating_source_reader;
 } ASFByteStreamHandlerImpl;
+
+typedef struct _ASFSourceReaderImpl
+{
+    IMFSourceReader IMFSourceReader_iface;
+    IMFByteStream *bytestream;
+
+    LONG ref;
+} ASFSourceReaderImpl;
+
+static inline ASFSourceReaderImpl *impl_from_IMFSourceReader(IMFSourceReader *iface)
+{
+    return CONTAINING_RECORD(iface, ASFSourceReaderImpl, IMFSourceReader_iface);
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_QueryInterface(IMFSourceReader *iface, REFIID riid, void **out)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+
+    TRACE("(%p)->(%s %p)\n", This, debugstr_guid(riid), out);
+
+    if(IsEqualGUID(riid, &IID_IUnknown) ||
+       IsEqualGUID(riid, &IID_IMFSourceReader))
+    {
+        *out = &This->IMFSourceReader_iface;
+    }
+    else
+    {
+        FIXME("(%s, %p)\n", debugstr_guid(riid), out);
+        *out = NULL;
+        return E_NOINTERFACE;
+    }
+
+    IUnknown_AddRef((IUnknown*)*out);
+    return S_OK;
+}
+
+static ULONG WINAPI ASFSourceReaderImpl_AddRef(IMFSourceReader *iface)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    ULONG ref = InterlockedIncrement(&This->ref);
+
+    TRACE("(%p) ref=%u\n", This, ref);
+
+    return ref;
+}
+
+static ULONG WINAPI ASFSourceReaderImpl_Release(IMFSourceReader *iface)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    ULONG ref = InterlockedDecrement(&This->ref);
+
+    TRACE("(%p) ref=%u\n", This, ref);
+
+    if (!ref)
+    {
+        HeapFree(GetProcessHeap(), 0, This);
+    }
+
+    return ref;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_GetStreamSelection(IMFSourceReader *iface, DWORD index, BOOL *selected)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %p\n", This, index, selected);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_SetStreamSelection(IMFSourceReader *iface, DWORD index, BOOL selected)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %d\n", This, index, selected);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_GetNativeMediaType(IMFSourceReader *iface, DWORD index,
+                                                             DWORD typeindex, IMFMediaType **type)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %d, %p\n", This, index, typeindex, type);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_GetCurrentMediaType(IMFSourceReader *iface, DWORD index,
+                                                              IMFMediaType **type)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %p\n", This, index, type);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_SetCurrentMediaType(IMFSourceReader *iface, DWORD index,
+                                                              DWORD *reserved, IMFMediaType *type)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %p, %p\n", This, index, reserved, type);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_SetCurrentPosition(IMFSourceReader *iface, REFGUID format, 
+                                                             REFPROPVARIANT position)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, %s, %p\n", This, debugstr_guid(format), position);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_ReadSample(IMFSourceReader *iface, DWORD index,
+                                                     DWORD flags, DWORD *actualindex, 
+                                                     DWORD *sampleflags, LONGLONG *timestamp,
+                                                     IMFSample **sample)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, 0x%08x, %p, %p, %p, %p\n", This, index, flags, actualindex,
+          sampleflags, timestamp, sample);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_Flush(IMFSourceReader *iface, DWORD index)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x\n", This, index);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_GetServiceForStream(IMFSourceReader *iface, DWORD index, REFGUID service,
+                                                              REFIID riid, void **object)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %s, %s, %p\n", This, index, debugstr_guid(service), debugstr_guid(riid), object);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI ASFSourceReaderImpl_GetPresentationAttribute(IMFSourceReader *iface, DWORD index,
+                                                                   REFGUID guid, PROPVARIANT *attr)
+{
+    ASFSourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %s, %p\n", This, index, debugstr_guid(guid), attr);
+    return E_NOTIMPL;
+}
+
+struct IMFSourceReaderVtbl ASFSourceReaderImpl_vtbl =
+{
+    ASFSourceReaderImpl_QueryInterface,
+    ASFSourceReaderImpl_AddRef,
+    ASFSourceReaderImpl_Release,
+    ASFSourceReaderImpl_GetStreamSelection,
+    ASFSourceReaderImpl_SetStreamSelection,
+    ASFSourceReaderImpl_GetNativeMediaType,
+    ASFSourceReaderImpl_GetCurrentMediaType,
+    ASFSourceReaderImpl_SetCurrentMediaType,
+    ASFSourceReaderImpl_SetCurrentPosition,
+    ASFSourceReaderImpl_ReadSample,
+    ASFSourceReaderImpl_Flush,
+    ASFSourceReaderImpl_GetServiceForStream,
+    ASFSourceReaderImpl_GetPresentationAttribute
+};
 
 /* IMFByteStreamHandler implementation of ASF */
 static inline ASFByteStreamHandlerImpl *impl_from_IMFByteStreamHandler(IMFByteStreamHandler *iface)
@@ -102,11 +262,23 @@ static HRESULT WINAPI ASFByteStreamHandlerImpl_BeginCreateObject(IMFByteStreamHa
                                                                  IUnknown *state)
 {
     ASFByteStreamHandlerImpl *This = impl_from_IMFByteStreamHandler(iface);
+    ASFSourceReaderImpl *object;
 
-    FIXME("(%p)->(%p, %s, %#x, %p, %p, %p, %p): stub\n", This, bytestream, wine_dbgstr_w(url),
+    TRACE("(%p)->(%p, %s, %#x, %p, %p, %p, %p): stub\n", This, bytestream, wine_dbgstr_w(url),
           flags, props, cancel_cookie, callback, state);
 
-    return E_NOTIMPL;
+    object = HeapAlloc( GetProcessHeap(), 0, sizeof(*object) );
+    if(!object)
+        return E_OUTOFMEMORY;
+ 
+    object->ref = 1;
+    object->IMFSourceReader_iface.lpVtbl = &ASFSourceReaderImpl_vtbl;
+    object->bytestream = bytestream;
+    IMFByteStream_AddRef(object->bytestream);
+
+    This->creating_source_reader = &object->IMFSourceReader_iface;
+
+    return S_OK;
 }
 
 static HRESULT WINAPI ASFByteStreamHandlerImpl_EndCreateObject(IMFByteStreamHandler *iface, IMFAsyncResult *result,
@@ -114,9 +286,14 @@ static HRESULT WINAPI ASFByteStreamHandlerImpl_EndCreateObject(IMFByteStreamHand
 {
     ASFByteStreamHandlerImpl *This = impl_from_IMFByteStreamHandler(iface);
 
-    FIXME("(%p)->(%p, %p, %p): stub\n", This, result, object_type, object);
+    TRACE("(%p)->(%p, %p, %p): stub\n", This, result, object_type, object);
+ 
+    *object = (IUnknown *)This->creating_source_reader;
+    *object_type = MF_OBJECT_MEDIASOURCE;
+    This->creating_source_reader = NULL;
 
-    return E_NOTIMPL;
+    return S_OK;
+
 }
 
 static HRESULT WINAPI ASFByteStreamHandlerImpl_CancelObjectCreation(IMFByteStreamHandler *iface, IUnknown *cancel_cookie)
