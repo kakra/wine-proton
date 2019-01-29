@@ -157,6 +157,8 @@ static BOOL set_active_window( HWND hwnd, HWND *prev, BOOL mouse, BOOL focus )
         if (GetAncestor( hwnd, GA_PARENT ) == GetDesktopWindow())
             PostMessageW( GetDesktopWindow(), WM_PARENTNOTIFY, WM_NCACTIVATE, (LPARAM)hwnd );
 
+        imm_activate_window( hwnd );
+
         if (hwnd == GetForegroundWindow() && !IsIconic( hwnd ))
             USER_Driver->pSetActiveWindow( hwnd );
     }
