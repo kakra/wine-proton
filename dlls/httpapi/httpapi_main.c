@@ -190,7 +190,15 @@ ULONG WINAPI HttpAddUrl( HANDLE handle, PCWSTR url, PVOID reserved )
 ULONG WINAPI HttpCreateServerSession( HTTPAPI_VERSION version, HTTP_SERVER_SESSION_ID *id, ULONG reserved )
 {
     FIXME( "({%d,%d}, %p, %d): stub!\n", version.HttpApiMajorVersion, version.HttpApiMinorVersion, id, reserved );
-    return ERROR_ACCESS_DENIED;
+
+    if(!id)
+        return ERROR_INVALID_PARAMETER;
+    if(version.HttpApiMajorVersion != 2 || version.HttpApiMinorVersion != 0)
+        return ERROR_REVISION_MISMATCH;
+
+    *id = 0xabcdefff;
+
+    return NO_ERROR;
 }
 
 /***********************************************************************
