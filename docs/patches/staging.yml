@@ -1,0 +1,37 @@
+Compiler_Warnings: []
+api-ms-win-Stub_DLLs:
+  kernel32-Processor_Group: []
+d3d9-DesktopWindow: []
+ddraw-Rendering_Targets: []
+ddraw-Silence_FIXMEs: []
+dinput-Deadlock: []
+dsound-Fast_Mixer: []
+gdi32-Lazy_Font_Initialization: []
+gdi32-MultiMonitor: []
+gdiplus-Performance-Improvements: []
+iphlpapi-System_Ping: []
+kernel32-K32GetPerformanceInfo: []
+kernel32-NormalizeString:
+  libs-Unicode_Collation: []
+kernel32-SCSI_Sysfs: []
+ntdll-APC_Performance: []
+ntdll-CriticalSection: []
+ntdll-ThreadTime:
+  server-Realtime_Priority: []
+ntdll-Threading ntdll-Wait_User_APC server-Key_State server-PeekMessage server-ClipCursor server-Signal_Thread:
+  server-Shared_Memory: []
+setupapi-Display_Device: []
+shell32-IconCache: []
+user32-minimized_windows: []
+windowscodecs-GIF_Encoder:
+  windowscodecs-TIFF_Support:
+    windowscodecs-32bppPRGBA: []
+wined3d-Accounting: []
+wined3d-WINED3D_RS_COLORWRITEENABLE:
+  wined3d-Indexed_Vertex_Blending: []
+wined3d-WINED3D_TEXF_ANISOTROPIC: []
+wined3d-WINED3DFMT_B8G8R8X8_UNORM:
+  wined3d-DXTn:
+    d3dx9_36-DXTn: []
+winepulse-PulseAudio_Support: []
+ws2_32-APC_Performance: []
