@@ -302,7 +302,7 @@ static BOOL read_file_content_int(char *path, int *result)
 static BOOL SCSI_getsysentry(char *device_key, struct LinuxProcScsiDevice *dev, char *unix_path)
 {
     struct dirent *dent = NULL;
-    char path_buffer[100];
+    char path_buffer[300];
     DIR *generic_dir;
     int result, type;
 
@@ -367,7 +367,7 @@ static void create_hardware_branch(void)
     DIR *idedir, *scsidir;
     struct dirent *dent = NULL;
     FILE *procfile = NULL;
-    char cStr[40], cDevModel[40], cUnixDeviceName[40], read1[10] = "\0", read2[10] = "\0";
+    char cStr[40], cDevModel[40], cUnixDeviceName[300], read1[10] = "\0", read2[10] = "\0";
     SCSI_ADDRESS scsi_addr;
     UINT nType;
     struct LinuxProcScsiDevice dev;
