@@ -46,9 +46,13 @@
 #endif
 
 /* the following declarations are only available in linux/fcntl.h, but not fcntl.h */
+#ifndef F_ADD_SEALS
 #define F_LINUX_SPECIFIC_BASE   1024
 #define F_ADD_SEALS             (F_LINUX_SPECIFIC_BASE + 9)
+#endif
+#ifndef MFD_ALLOW_SEALING
 #define MFD_ALLOW_SEALING       0x0002U
+#endif
 #define F_SEAL_SEAL             0x0001
 #define F_SEAL_SHRINK           0x0002
 #define F_SEAL_GROW             0x0004
