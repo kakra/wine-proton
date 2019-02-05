@@ -858,7 +858,9 @@ static const WCHAR Microsoft_Windows_Start_Menu_StartupW[] = {'M','i','c','r','o
 static const WCHAR Microsoft_Windows_TemplatesW[] = {'M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','T','e','m','p','l','a','t','e','s',0};
 static const WCHAR Microsoft_Windows_Temporary_Internet_FilesW[] = {'M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','T','e','m','p','o','r','a','r','y',' ','I','n','t','e','r','n','e','t',' ','F','i','l','e','s',0};
 static const WCHAR Microsoft_Windows_ThemesW[] =  {'M','i','c','r','o','s','o','f','t','\\','W','i','n','d','o','w','s','\\','T','h','e','m','e','s',0};
+#if 0
 static const WCHAR MoviesW[] = {'M','o','v','i','e','s','\0'};
+#endif
 static const WCHAR MusicW[] = {'M','u','s','i','c','\0'};
 static const WCHAR MusicLibraryW[] = {'M','u','s','i','c','L','i','b','r','a','r','y',0};
 static const WCHAR Music_librarymsW[] = {'M','u','s','i','c','.','l','i','b','r','a','r','y','-','m','s',0};
@@ -4403,19 +4405,27 @@ static inline BOOL _SHAppendToUnixPath(char *szBasePath, LPCWSTR pwszSubPath) {
 static void _SHCreateSymbolicLinks(void)
 {
     UINT aidsMyStuff[] = { IDS_MYPICTURES, IDS_MYVIDEOS, IDS_MYMUSIC }, i;
+#if 0
     const WCHAR* MyOSXStuffW[] = { PicturesW, MoviesW, MusicW };
     int acsidlMyStuff[] = { CSIDL_MYPICTURES, CSIDL_MYVIDEO, CSIDL_MYMUSIC };
     static const char * const xdg_dirs[] = { "PICTURES", "VIDEOS", "MUSIC", "DOCUMENTS", "DESKTOP" };
     static const unsigned int num = ARRAY_SIZE(xdg_dirs);
+#endif
     WCHAR wszTempPath[MAX_PATH];
-    char szPersonalTarget[FILENAME_MAX], *pszPersonal;
-    char szMyStuffTarget[FILENAME_MAX], *pszMyStuff;
-    char szDesktopTarget[FILENAME_MAX], *pszDesktop;
+    char szPersonalTarget[FILENAME_MAX];
+    char szMyStuffTarget[FILENAME_MAX];
+    char *pszPersonal;
+#if 0
+    char szDesktopTarget[FILENAME_MAX];
+    char *pszMyStuff, *pszDesktop;
     struct stat statFolder;
     const char *pszHome;
+#endif
     HRESULT hr;
+#if 0
     char ** xdg_results;
     char * xdg_desktop_dir;
+#endif
 
     /* Create all necessary profile sub-dirs up to 'My Documents' and get the unix path. */
     hr = SHGetFolderPathW(NULL, CSIDL_PERSONAL|CSIDL_FLAG_CREATE, NULL,
@@ -4478,10 +4488,10 @@ static void _SHCreateSymbolicLinks(void)
     }
     else
     {
-#endif
         /* '$HOME' doesn't exist. Create 'My Pictures', 'My Videos' and 'My Music' subdirs
          * in '%USERPROFILE%\\My Documents' or fail silently if they already exist. */
         pszHome = NULL;
+#endif
         strcpy(szPersonalTarget, pszPersonal);
         for (i = 0; i < ARRAY_SIZE(aidsMyStuff); i++) {
             strcpy(szMyStuffTarget, szPersonalTarget);
