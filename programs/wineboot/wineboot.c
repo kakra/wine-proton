@@ -1014,6 +1014,7 @@ static BOOL start_services_process(void)
     return TRUE;
 }
 
+#if 0
 static INT_PTR CALLBACK wait_dlgproc( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
 {
     switch (msg)
@@ -1034,6 +1035,7 @@ static INT_PTR CALLBACK wait_dlgproc( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
     }
     return 0;
 }
+#endif
 
 /*
 static HWND show_wait_window(void)
