@@ -44,6 +44,7 @@
 #include "winsock2.h"
 #include "file.h"
 #include "request.h"
+#include "process.h"
 #include "unicode.h"
 
 static const void *cur_data;
@@ -5717,7 +5718,7 @@ void trace_request(void)
     enum request req = current->req.request_header.req;
     if (req < REQ_NB_REQUESTS)
     {
-        fprintf( stderr, "%04x: %s(", current->id, req_names[req] );
+        fprintf( stderr, "%04x:%04x: %s(", current->process->id, current->id, req_names[req] );
         if (req_dumpers[req])
         {
             cur_data = get_req_data();
@@ -5726,14 +5727,14 @@ void trace_request(void)
         }
         fprintf( stderr, " )\n" );
     }
-    else fprintf( stderr, "%04x: %d(?)\n", current->id, req );
+    else fprintf( stderr, "%04x:%04x: %d(?)\n", current->process->id, current->id, req );
 }
 
 void trace_reply( enum request req, const union generic_reply *reply )
 {
     if (req < REQ_NB_REQUESTS)
     {
-        fprintf( stderr, "%04x: %s() = %s",
+        fprintf( stderr, "%04x:%04x: %s() = %s", current->process->id,
                  current->id, req_names[req], get_status_name(current->error) );
         if (reply_dumpers[req])
         {
@@ -5745,6 +5746,6 @@ void trace_reply( enum request req, const union generic_reply *reply )
         }
         fputc( '\n', stderr );
     }
-    else fprintf( stderr, "%04x: %d() = %s\n",
+    else fprintf( stderr, "%04x:%04x: %d() = %s\n", current->process->id,
                   current->id, req, get_status_name(current->error) );
 }
