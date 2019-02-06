@@ -103,6 +103,7 @@ static void dxt135_decode_imageblock ( const GLubyte *img_block_src,
 }
 
 
+#if 0
 static void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
                          GLint i, GLint j, GLvoid *texel)
 {
@@ -113,6 +114,7 @@ static void fetch_2d_texel_rgb_dxt1(GLint srcRowStride, const GLubyte *pixdata,
    const GLubyte *blksrc = (pixdata + ((srcRowStride + 3) / 4 * (j / 4) + (i / 4)) * 8);
    dxt135_decode_imageblock(blksrc, (i&3), (j&3), 0, texel);
 }
+#endif
 
 
 static void fetch_2d_texel_rgba_dxt1(GLint srcRowStride, const GLubyte *pixdata,
