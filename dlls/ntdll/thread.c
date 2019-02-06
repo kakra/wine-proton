@@ -1264,8 +1264,12 @@ NTSTATUS WINAPI NtQueryInformationThread( HANDLE handle, THREADINFOCLASS class,
     case ThreadPriorityBoost:
     case ThreadSetTlsArrayAddress:
     default:
-        FIXME( "info class %d not supported yet\n", class );
-        return STATUS_NOT_IMPLEMENTED;
+        {
+            static int once[MaxThreadInfoClass];
+            if (!once[class]++)
+                FIXME( "info class %d not supported yet\n", class );
+            return STATUS_NOT_IMPLEMENTED;
+        }
     }
 }
 
@@ -1421,8 +1425,12 @@ NTSTATUS WINAPI NtSetInformationThread( HANDLE handle, THREADINFOCLASS class,
     case ThreadSetTlsArrayAddress:
     case ThreadIsIoPending:
     default:
-        FIXME( "info class %d not supported yet\n", class );
-        return STATUS_NOT_IMPLEMENTED;
+        {
+            static int once[MaxThreadInfoClass];
+            if (!once[class]++)
+                FIXME( "info class %d not supported yet\n", class );
+            return STATUS_NOT_IMPLEMENTED;
+        }
     }
 }
 
