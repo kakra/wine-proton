@@ -464,9 +464,11 @@ static struct fontinfo *fill_fontinfo( const char *face_name, int ppem, int enc,
     for(i = first_char; i < 0x100; i++) {
         int c = get_char(cptable, enc, i);
         gi = FT_Get_Char_Index(face, c);
+#if 0
         if(gi == 0 && !option_quiet)
             fprintf(stderr, "warning: %s %u: missing glyph for char %04x\n",
                     face->family_name, ppem, cptable->sbcs.cp2uni[i]);
+#endif
         if(FT_Load_Char(face, c, FT_LOAD_DEFAULT)) {
             fprintf(stderr, "error loading char %d - bad news!\n", i);
             continue;
