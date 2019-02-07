@@ -204,6 +204,7 @@ static inline IClassFactoryImpl *impl_from_IClassFactory(IClassFactory *iface)
     return CONTAINING_RECORD(iface, IClassFactoryImpl, IClassFactory_iface);
 }
 
+#if 0
 static HRESULT WINAPI ClassFactory_QueryInterface(IClassFactory *iface, REFIID riid, void **ppv)
 {
     if (ppv == NULL)
@@ -271,6 +272,7 @@ static const IClassFactoryVtbl classfactory_vtbl = {
     ClassFactory_CreateInstance,
     ClassFactory_LockServer
 };
+#endif
 
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID reserved)
 {
