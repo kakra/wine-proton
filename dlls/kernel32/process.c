@@ -2040,6 +2040,9 @@ static pid_t spawn_loader( const RTL_USER_PROCESS_PARAMETERS *params, int socket
     argv = build_argv( &params->CommandLine, 1 );
 
     if (!is_win64 ^ !is_64bit_arch( pe_info->cpu ))
+#ifdef _WIN64
+    if ( !(pe_info->image_flags & IMAGE_FLAGS_ComPlusNativeReady) )
+#endif
         loader = get_alternate_loader( &wineloader );
 
     wine_server_handle_to_fd( params->hStdInput, FILE_READ_DATA, &stdin_fd, NULL );
@@ -2343,6 +2346,11 @@ static BOOL create_process( HANDLE hFile, LPSECURITY_ATTRIBUTES psa, LPSECURITY_
         req->socket_fd      = socketfd[1];
         req->exe_file       = wine_server_obj_handle( hFile );
         req->access         = PROCESS_ALL_ACCESS;
+#ifdef _WIN64
+        if (pe_info->image_flags & IMAGE_FLAGS_ComPlusNativeReady)
+           req->cpu         =   CPU_x86_64;
+        else
+#endif
         req->cpu            = pe_info->cpu;
         req->info_size      = startup_info_size;
         wine_server_add_data( req, objattr, attr_len );
