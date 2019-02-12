@@ -1337,10 +1337,23 @@ static HRESULT WINAPI mfbytestream_IsEndOfStream(IMFByteStream *iface, BOOL *end
 static HRESULT WINAPI mfbytestream_Read(IMFByteStream *iface, BYTE *data, ULONG count, ULONG *byte_read)
 {
     mfbytestream *This = impl_from_IMFByteStream(iface);
+    STATSTG statstg;
+    QWORD length;
+    HRESULT hr;
 
-    FIXME("%p, %p, %u, %p\n", This, data, count, byte_read);
+    TRACE("(%p)->(%p, %u, %p)\n", This, data, count, byte_read);
 
-    return E_NOTIMPL;
+    memset(&statstg, 0, sizeof(statstg));
+    hr = IStream_Stat(This->stream, &statstg, STATFLAG_NONAME);
+    if(FAILED(hr))
+        return hr;
+    if((statstg.grfMode & 0xf) == STGM_WRITE)
+        return E_ACCESSDENIED;
+
+    IMFByteStream_GetLength(iface, &length);
+    if(count > length)
+        count = length;
+    return IStream_Read(This->stream, data, count, byte_read);
 }
 
 static HRESULT WINAPI mfbytestream_BeginRead(IMFByteStream *iface, BYTE *data, ULONG count,
@@ -1365,10 +1378,19 @@ static HRESULT WINAPI mfbytestream_EndRead(IMFByteStream *iface, IMFAsyncResult 
 static HRESULT WINAPI mfbytestream_Write(IMFByteStream *iface, const BYTE *data, ULONG count, ULONG *written)
 {
     mfbytestream *This = impl_from_IMFByteStream(iface);
+    ULARGE_INTEGER stream_size;
+    HRESULT hr;
 
-    FIXME("%p, %p, %u, %p\n", This, data, count, written);
+    TRACE("(%p)->(%p, %u, %p)\n", This, data, count, written);
 
-    return E_NOTIMPL;
+    hr = IStream_Write(This->stream, data, count, written);
+    if(hr == STG_E_ACCESSDENIED)
+        return E_ACCESSDENIED;
+    hr = IStream_Size(This->stream, &stream_size);
+    if(FAILED(hr))
+        return hr;
+    This->length = stream_size.QuadPart;
+    return hr;
 }
 
 static HRESULT WINAPI mfbytestream_BeginWrite(IMFByteStream *iface, const BYTE *data, ULONG count,
