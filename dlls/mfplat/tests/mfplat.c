@@ -1636,13 +1636,13 @@ static void test_bytestream_from_file(void)
     CHECK_BS_LEN(bytestream, sizeof(asf_header));
     read = 0;
     hr = IMFByteStream_Read(bytestream, buffer, sizeof(buffer), &read);
-    todo_wine ok(hr == S_OK, "IMFByteStream_Read failed: 0x%08x.\n", hr);
-    todo_wine ok(read == sizeof(asf_header), "got wrong read length: %d.\n", read);
-    todo_wine ok(!memcmp(buffer, asf_header, sizeof(asf_header)), "got wrong content.\n");
+    ok(hr == S_OK, "IMFByteStream_Read failed: 0x%08x.\n", hr);
+    ok(read == sizeof(asf_header), "got wrong read length: %d.\n", read);
+    ok(!memcmp(buffer, asf_header, sizeof(asf_header)), "got wrong content.\n");
     todo_wine CHECK_BS_POS(bytestream, sizeof(asf_header));
     memset(buffer, 0, sizeof(buffer));
     hr = IMFByteStream_Write(bytestream, asf_header, sizeof(asf_header), &written);
-    todo_wine ok(hr == E_ACCESSDENIED, "IMFByteStream_Write should fail: 0x%08x.\n", hr);
+    ok(hr == E_ACCESSDENIED, "IMFByteStream_Write should fail: 0x%08x.\n", hr);
     hr = IMFByteStream_SetLength(bytestream, 200);
     ok(hr == E_FAIL, "IMFByteStream_SetLength should fail: 0x%08x.\n", hr);
     todo_wine CHECK_BS_POS(bytestream, sizeof(asf_header));
@@ -1653,12 +1653,12 @@ static void test_bytestream_from_file(void)
                       MF_FILEFLAGS_NONE, asffile, &bytestream);
     ok(hr == S_OK, "MFCreateFile failed: 0x%08x.\n", hr);
     hr = IMFByteStream_Read(bytestream, buffer, sizeof(buffer), &read);
-    todo_wine ok(hr == E_ACCESSDENIED, "IMFByteStream_Read should fail: 0x%08x.\n", hr);
+    ok(hr == E_ACCESSDENIED, "IMFByteStream_Read should fail: 0x%08x.\n", hr);
     todo_wine CHECK_BS_POS(bytestream, 0);
     written = 0xdeadbeef;
     hr = IMFByteStream_Write(bytestream, asf_header, sizeof(asf_header), &written);
-    todo_wine ok(hr == S_OK, "IMFByteStream_Write failed: 0x%08x.\n", hr);
-    todo_wine ok(written == sizeof(asf_header), "got wrong written length: %d.\n", written);
+    ok(hr == S_OK, "IMFByteStream_Write failed: 0x%08x.\n", hr);
+    ok(written == sizeof(asf_header), "got wrong written length: %d.\n", written);
     CHECK_BS_LEN(bytestream, sizeof(asf_header));
     todo_wine CHECK_BS_POS(bytestream, sizeof(asf_header));
 
@@ -1685,8 +1685,8 @@ static void test_bytestream_from_file(void)
     CHECK_BS_LEN(bytestream, sizeof(asf_header) + 2);
     written = 0xdeadbeef;
     hr = IMFByteStream_Write(bytestream, test_data, sizeof(test_data), &written);
-    todo_wine ok(hr == S_OK, "IMFByteStream_Write failed: 0x%08x.\n", hr);
-    todo_wine ok(written == sizeof(test_data), "got wrong written length: %d.\n", written);
+    ok(hr == S_OK, "IMFByteStream_Write failed: 0x%08x.\n", hr);
+    ok(written == sizeof(test_data), "got wrong written length: %d.\n", written);
     CHECK_BS_LEN(bytestream, sizeof(asf_header) + 2);
     todo_wine CHECK_BS_POS(bytestream, sizeof(test_data));
     IMFByteStream_Release(bytestream);
@@ -1705,8 +1705,8 @@ static void test_bytestream_from_file(void)
     todo_wine CHECK_BS_POS(bytestream, 0);
     read = 0xdeadbeef;
     hr = IMFByteStream_Read(bytestream, buffer, sizeof(buffer), &read);
-    todo_wine ok(hr == S_OK, "IMFByteStream_Read failed: 0x%08x.\n", hr);
-    todo_wine ok(read == 0 || broken(read == 1000) /* xp */, "got wrong read length: %d.\n", read);
+    ok(hr == S_OK, "IMFByteStream_Read failed: 0x%08x.\n", hr);
+    ok(read == 0 || broken(read == 1000) /* xp */, "got wrong read length: %d.\n", read);
     memset(buffer, 0, sizeof(buffer));
     IMFByteStream_Release(bytestream);
 
@@ -1748,8 +1748,8 @@ static void test_bytestream_from_stream(void)
     CHECK_BS_LEN(bytestream, sizeof(asf_header));
     hr = IMFByteStream_Read(bytestream, buffer, sizeof(buffer), &read);
     todo_wine ok(hr == S_FALSE, "IMFByteStream_Read returned: 0x%08x.\n", hr);
-    todo_wine ok(read == sizeof(asf_header), "got wrong read length: %d.\n", read);
-    todo_wine ok(!memcmp(buffer, asf_header, sizeof(asf_header)), "got wrong content.\n");
+    ok(read == sizeof(asf_header), "got wrong read length: %d.\n", read);
+    ok(!memcmp(buffer, asf_header, sizeof(asf_header)), "got wrong content.\n");
     todo_wine CHECK_BS_POS(bytestream, sizeof(asf_header));
     memset(buffer, 0, sizeof(buffer));
     todo_wine CHECK_BS_POS(bytestream, sizeof(asf_header));
@@ -1772,8 +1772,8 @@ static void test_bytestream_from_stream(void)
     todo_wine CHECK_BS_POS(bytestream, 0);
     written = 0xdeadbeef;
     hr = IMFByteStream_Write(bytestream, asf_header, sizeof(asf_header), &written);
-    todo_wine ok(hr == S_OK, "IMFByteStream_Write failed: 0x%08x.\n", hr);
-    todo_wine ok(written == sizeof(asf_header), "got wrong written length: %d.\n", written);
+    ok(hr == S_OK, "IMFByteStream_Write failed: 0x%08x.\n", hr);
+    ok(written == sizeof(asf_header), "got wrong written length: %d.\n", written);
     CHECK_BS_LEN(bytestream, sizeof(asf_header));
     todo_wine CHECK_BS_POS(bytestream, sizeof(asf_header));
 
