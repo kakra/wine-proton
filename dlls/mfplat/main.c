@@ -1211,6 +1211,7 @@ typedef struct _mfbytestream
 {
     mfattributes attributes;
     IMFByteStream IMFByteStream_iface;
+    IStream *stream;
 } mfbytestream;
 
 static inline mfbytestream *impl_from_IMFByteStream(IMFByteStream *iface)
@@ -1264,6 +1265,7 @@ static ULONG WINAPI mfbytestream_Release(IMFByteStream *iface)
     if (!ref)
     {
         free_attribute_object(&This->attributes);
+        IStream_Release(This->stream);
         HeapFree(GetProcessHeap(), 0, This);
     }
 
@@ -1507,6 +1509,8 @@ HRESULT WINAPI MFCreateMFByteStreamOnStream(IStream *stream, IMFByteStream **byt
     init_attribute_object(&object->attributes, 0);
     object->IMFByteStream_iface.lpVtbl = &mfbytestream_vtbl;
     object->attributes.IMFAttributes_iface.lpVtbl = &mfbytestream_attributes_vtbl;
+    object->stream = stream;
+    IStream_AddRef(object->stream);
 
     *bytestream = &object->IMFByteStream_iface;
 
@@ -1517,60 +1521,65 @@ HRESULT WINAPI MFCreateFile(MF_FILE_ACCESSMODE accessmode, MF_FILE_OPENMODE open
                             LPCWSTR url, IMFByteStream **bytestream)
 {
     mfbytestream *object;
-    DWORD fileaccessmode = 0;
-    DWORD filesharemode = FILE_SHARE_READ;
-    DWORD filecreation_disposition = 0;
-    DWORD fileattributes = 0;
-    HANDLE file;
+    DWORD mode = STGM_SHARE_DENY_WRITE;
+    DWORD attributes = FILE_ATTRIBUTE_NORMAL;
+    BOOL create = FALSE, reset = FALSE;
+    IStream *stream = NULL;
+    HRESULT hres;
 
-    FIXME("(%d, %d, %d, %s, %p): stub\n", accessmode, openmode, flags, debugstr_w(url), bytestream);
+    TRACE("(%d, %d, %d, %s, %p)\n", accessmode, openmode, flags, debugstr_w(url), bytestream);
 
     switch (accessmode)
     {
         case MF_ACCESSMODE_READ:
-            fileaccessmode = GENERIC_READ;
+            mode |= STGM_READ;
             break;
         case MF_ACCESSMODE_WRITE:
-            fileaccessmode = GENERIC_WRITE;
+            mode |= STGM_WRITE;
             break;
         case MF_ACCESSMODE_READWRITE:
-            fileaccessmode = GENERIC_READ | GENERIC_WRITE;
+            mode |= STGM_READWRITE;
             break;
     }
 
     switch (openmode)
     {
-        case MF_OPENMODE_FAIL_IF_NOT_EXIST:
-            filecreation_disposition = OPEN_EXISTING;
-            break;
-        case MF_OPENMODE_FAIL_IF_EXIST:
-            filecreation_disposition = CREATE_NEW;
-            break;
         case MF_OPENMODE_RESET_IF_EXIST:
-            filecreation_disposition = TRUNCATE_EXISTING;
+            if (accessmode == MF_ACCESSMODE_READ)
+                return E_INVALIDARG;
+            reset = TRUE;
+            mode |= STGM_FAILIFTHERE;
             break;
         case MF_OPENMODE_APPEND_IF_EXIST:
-            filecreation_disposition = OPEN_ALWAYS;
-            fileaccessmode |= FILE_APPEND_DATA;
+            if (GetFileAttributesW(url) == INVALID_FILE_ATTRIBUTES)
+                create = TRUE;
+        case MF_OPENMODE_FAIL_IF_NOT_EXIST:
+            mode |= STGM_FAILIFTHERE;
+            break;
+        case MF_OPENMODE_FAIL_IF_EXIST:
+            mode |= STGM_FAILIFTHERE;
+            create = TRUE;
             break;
         case MF_OPENMODE_DELETE_IF_EXIST:
-            filecreation_disposition = CREATE_ALWAYS;
+            mode |= STGM_CREATE;
             break;
     }
 
     if (flags & MF_FILEFLAGS_NOBUFFERING)
-        fileattributes |= FILE_FLAG_NO_BUFFERING;
+        attributes |= FILE_FLAG_NO_BUFFERING;
+    if ((flags & MF_FILEFLAGS_ALLOW_WRITE_SHARING) && (accessmode == MF_ACCESSMODE_READ))
+        mode &= ~STGM_SHARE_DENY_WRITE;
 
-    /* Open HANDLE to file */
-    file = CreateFileW(url, fileaccessmode, filesharemode, NULL,
-                       filecreation_disposition, fileattributes, 0);
+    hres = SHCreateStreamOnFileEx(url, mode, attributes, create, NULL, &stream);
+    if (FAILED(hres))
+        return hres;
 
-    if(file == INVALID_HANDLE_VALUE)
-        return HRESULT_FROM_WIN32(GetLastError());
-
-    /* Close the file again, since we don't do anything with it yet */
-    CloseHandle(file);
-
+    if (reset)
+    {
+        ULARGE_INTEGER zero;
+        zero.QuadPart = 0;
+        IStream_SetSize(stream, zero);
+    }
     object = heap_alloc( sizeof(*object) );
     if(!object)
         return E_OUTOFMEMORY;
@@ -1578,6 +1587,7 @@ HRESULT WINAPI MFCreateFile(MF_FILE_ACCESSMODE accessmode, MF_FILE_OPENMODE open
     init_attribute_object(&object->attributes, 0);
     object->IMFByteStream_iface.lpVtbl = &mfbytestream_vtbl;
     object->attributes.IMFAttributes_iface.lpVtbl = &mfbytestream_attributes_vtbl;
+    object->stream = stream;
 
     *bytestream = &object->IMFByteStream_iface;
 

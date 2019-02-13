@@ -58,6 +58,48 @@ DEFINE_GUID(DUMMY_GUID4, 0x12345678,0x1234,0x1234,0x24,0x24,0x24,0x24,0x24,0x24,
 
 static const WCHAR mp4file[] = {'t','e','s','t','.','m','p','4',0};
 
+#define CHECK_REF(obj,ref) _check_ref((IUnknown*)obj, ref, __LINE__)
+static void _check_ref(IUnknown* obj, ULONG ref, int line)
+{
+    ULONG rc;
+    IUnknown_AddRef(obj);
+    rc = IUnknown_Release(obj);
+    ok_(__FILE__,line)(rc == ref, "expected refcount %d, got %d\n", ref, rc);
+}
+
+#define CHECK_BS_POS(obj,pos) _check_bs_pos(obj, pos, __LINE__)
+static void _check_bs_pos(IMFByteStream* obj, QWORD pos, int line)
+{
+    QWORD position = 0xdeadbeef;
+    HRESULT hr;
+    hr = IMFByteStream_GetCurrentPosition(obj, &position);
+    ok_(__FILE__,line)(hr == S_OK, "IMFByteStream_GetCurrentPosition failed: 0x%08x.\n", hr);
+    ok_(__FILE__,line)(position == pos, "got wrong position: %s.\n",
+                       wine_dbgstr_longlong(position));
+}
+
+#define CHECK_BS_LEN(obj,len) _check_bs_len(obj, len, __LINE__)
+static void _check_bs_len(IMFByteStream* obj, QWORD len, int line)
+{
+    QWORD length = 0xdeadbeef;
+    HRESULT hr;
+    hr = IMFByteStream_GetLength(obj, &length);
+    ok_(__FILE__,line)(hr == S_OK, "IMFByteStream_GetLength failed: 0x%08x.\n", hr);
+    ok_(__FILE__,line)(length == len, "got wrong length: %s.\n",
+                       wine_dbgstr_longlong(length));
+}
+
+#define CHECK_FILE_SIZE(filename,exp_size) _check_file_size(filename, exp_size, __LINE__)
+static void _check_file_size(const WCHAR *filename, LONG exp_size, int line)
+{
+    HANDLE handle;
+    DWORD file_size = 0xdeadbeef;
+    handle = CreateFileW(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, 0);
+    file_size = GetFileSize(handle, NULL);
+    ok_(__FILE__,line)(file_size == exp_size, "got wrong file size: %d.\n", file_size);
+    CloseHandle(handle);
+}
+
 static BOOL is_prewin8(void)
 {
     DWORD version = GetVersion();
@@ -646,8 +688,10 @@ static void test_MFCreateMFByteStreamOnStream(void)
     hr = CreateStreamOnHGlobal(NULL, TRUE, &stream);
     ok(hr == S_OK, "got 0x%08x\n", hr);
 
+    CHECK_REF(stream, 1);
     hr = pMFCreateMFByteStreamOnStream(stream, &bytestream);
     ok(hr == S_OK, "got 0x%08x\n", hr);
+    CHECK_REF(stream, 2);
 
     hr = IMFByteStream_QueryInterface(bytestream, &IID_IUnknown,
                                  (void **)&unknown);
@@ -705,7 +749,8 @@ static void test_MFCreateFile(void)
     IMFAttributes *attributes = NULL;
     HRESULT hr;
     WCHAR *filename;
-
+    LONG file_size;
+    HANDLE handle;
     static const WCHAR newfilename[] = {'n','e','w','.','m','p','4',0};
 
     filename = load_resource(mp4file);
@@ -730,13 +775,11 @@ static void test_MFCreateFile(void)
 
     hr = MFCreateFile(MF_ACCESSMODE_WRITE, MF_OPENMODE_FAIL_IF_NOT_EXIST,
                       MF_FILEFLAGS_NONE, filename, &bytestream2);
-    todo_wine ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
-    if (hr == S_OK) IMFByteStream_Release(bytestream2);
+    ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
 
     hr = MFCreateFile(MF_ACCESSMODE_READWRITE, MF_OPENMODE_FAIL_IF_NOT_EXIST,
                       MF_FILEFLAGS_NONE, filename, &bytestream2);
-    todo_wine ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
-    if (hr == S_OK) IMFByteStream_Release(bytestream2);
+    ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
 
     IMFByteStream_Release(bytestream);
 
@@ -754,18 +797,15 @@ static void test_MFCreateFile(void)
 
     hr = MFCreateFile(MF_ACCESSMODE_READ, MF_OPENMODE_FAIL_IF_NOT_EXIST,
                       MF_FILEFLAGS_NONE, newfilename, &bytestream2);
-    todo_wine ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
-    if (hr == S_OK) IMFByteStream_Release(bytestream2);
+    ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
 
     hr = MFCreateFile(MF_ACCESSMODE_WRITE, MF_OPENMODE_FAIL_IF_NOT_EXIST,
                       MF_FILEFLAGS_NONE, newfilename, &bytestream2);
-    todo_wine ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
-    if (hr == S_OK) IMFByteStream_Release(bytestream2);
+    ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
 
     hr = MFCreateFile(MF_ACCESSMODE_WRITE, MF_OPENMODE_FAIL_IF_NOT_EXIST,
                       MF_FILEFLAGS_ALLOW_WRITE_SHARING, newfilename, &bytestream2);
-    todo_wine ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
-    if (hr == S_OK) IMFByteStream_Release(bytestream2);
+    ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
 
     IMFByteStream_Release(bytestream);
 
@@ -776,10 +816,43 @@ static void test_MFCreateFile(void)
     /* Opening the file again fails even though MF_FILEFLAGS_ALLOW_WRITE_SHARING is set. */
     hr = MFCreateFile(MF_ACCESSMODE_WRITE, MF_OPENMODE_FAIL_IF_NOT_EXIST,
                       MF_FILEFLAGS_ALLOW_WRITE_SHARING, newfilename, &bytestream2);
-    todo_wine ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
-    if (hr == S_OK) IMFByteStream_Release(bytestream2);
+    ok(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION), "got 0x%08x\n", hr);
 
+    hr = MFCreateFile(MF_ACCESSMODE_READ, MF_OPENMODE_FAIL_IF_NOT_EXIST,
+                      MF_FILEFLAGS_ALLOW_WRITE_SHARING, newfilename, &bytestream2);
+    ok(hr == S_OK || broken(hr == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)) /* xp and vista */,
+       "MFCreateFile failed: 0x%08x.\n", hr);
+    if(hr == S_OK)
+        IMFByteStream_Release(bytestream2);
     IMFByteStream_Release(bytestream);
+
+    /* test MF_OPENMODE_APPEND_IF_EXIST */
+    handle = CreateFileW(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, 0);
+    ok(handle != INVALID_HANDLE_VALUE, "File creation failed: 0x%08x.\n", GetLastError());
+    file_size = GetFileSize(handle, NULL);
+    CloseHandle(handle);
+    hr = MFCreateFile(MF_ACCESSMODE_WRITE, MF_OPENMODE_APPEND_IF_EXIST,
+                      MF_FILEFLAGS_ALLOW_WRITE_SHARING, filename, &bytestream);
+    ok(hr == S_OK, "MFCreateFile failed: 0x%08x.\n", hr);
+    todo_wine CHECK_BS_LEN(bytestream, file_size);
+    todo_wine CHECK_BS_POS(bytestream, 0);
+    IMFByteStream_Release(bytestream);
+    CHECK_FILE_SIZE(filename, file_size);
+
+    /* test MF_OPENMODE_RESET_IF_EXIST with read-only mode */
+    hr = MFCreateFile(MF_ACCESSMODE_READ, MF_OPENMODE_RESET_IF_EXIST,
+                      MF_FILEFLAGS_ALLOW_WRITE_SHARING, filename, &bytestream);
+    ok(hr == E_INVALIDARG, "MFCreateFile should fail: 0x%08x.\n", hr);
+    CHECK_FILE_SIZE(filename, file_size);
+
+    /* test MF_OPENMODE_RESET_IF_EXIST */
+    hr = MFCreateFile(MF_ACCESSMODE_WRITE, MF_OPENMODE_RESET_IF_EXIST,
+                      MF_FILEFLAGS_NONE, filename, &bytestream);
+    ok(hr == S_OK, "MFCreateFile failed: 0x%08x.\n", hr);
+    todo_wine CHECK_BS_LEN(bytestream, 0);
+    todo_wine CHECK_BS_POS(bytestream, 0);
+    IMFByteStream_Release(bytestream);
+    CHECK_FILE_SIZE(filename, 0);
 
     MFShutdown();
 
