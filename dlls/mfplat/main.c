@@ -1212,6 +1212,7 @@ typedef struct _mfbytestream
     mfattributes attributes;
     IMFByteStream IMFByteStream_iface;
     IStream *stream;
+    QWORD length;
 } mfbytestream;
 
 static inline mfbytestream *impl_from_IMFByteStream(IMFByteStream *iface)
@@ -1285,18 +1286,22 @@ static HRESULT WINAPI mfbytestream_GetLength(IMFByteStream *iface, QWORD *length
 {
     mfbytestream *This = impl_from_IMFByteStream(iface);
 
-    FIXME("%p, %p\n", This, length);
+    TRACE("(%p)->(%p)\n", This, length);
 
-    return E_NOTIMPL;
+    *length = This->length;
+
+    return S_OK;
 }
 
 static HRESULT WINAPI mfbytestream_SetLength(IMFByteStream *iface, QWORD length)
 {
     mfbytestream *This = impl_from_IMFByteStream(iface);
+    ULARGE_INTEGER size;
 
-    FIXME("%p, %s\n", This, wine_dbgstr_longlong(length));
+    TRACE("(%p)->(%s)\n", This, wine_dbgstr_longlong(length));
 
-    return E_NOTIMPL;
+    size.QuadPart = length;
+    return IStream_SetSize(This->stream, size);
 }
 
 static HRESULT WINAPI mfbytestream_GetCurrentPosition(IMFByteStream *iface, QWORD *position)
@@ -1499,6 +1504,8 @@ static const IMFAttributesVtbl mfbytestream_attributes_vtbl =
 HRESULT WINAPI MFCreateMFByteStreamOnStream(IStream *stream, IMFByteStream **bytestream)
 {
     mfbytestream *object;
+    ULARGE_INTEGER stream_size;
+    HRESULT hres;
 
     TRACE("(%p, %p): stub\n", stream, bytestream);
 
@@ -1510,6 +1517,14 @@ HRESULT WINAPI MFCreateMFByteStreamOnStream(IStream *stream, IMFByteStream **byt
     object->IMFByteStream_iface.lpVtbl = &mfbytestream_vtbl;
     object->attributes.IMFAttributes_iface.lpVtbl = &mfbytestream_attributes_vtbl;
     object->stream = stream;
+    hres = IStream_Size(object->stream, &stream_size);
+    if(FAILED(hres))
+    {
+        free_attribute_object(&object->attributes);
+        heap_free(object);
+        return hres;
+    }
+    object->length = stream_size.QuadPart;
     IStream_AddRef(object->stream);
 
     *bytestream = &object->IMFByteStream_iface;
@@ -1525,6 +1540,7 @@ HRESULT WINAPI MFCreateFile(MF_FILE_ACCESSMODE accessmode, MF_FILE_OPENMODE open
     DWORD attributes = FILE_ATTRIBUTE_NORMAL;
     BOOL create = FALSE, reset = FALSE;
     IStream *stream = NULL;
+    ULARGE_INTEGER stream_size;
     HRESULT hres;
 
     TRACE("(%d, %d, %d, %s, %p)\n", accessmode, openmode, flags, debugstr_w(url), bytestream);
@@ -1588,6 +1604,14 @@ HRESULT WINAPI MFCreateFile(MF_FILE_ACCESSMODE accessmode, MF_FILE_OPENMODE open
     object->IMFByteStream_iface.lpVtbl = &mfbytestream_vtbl;
     object->attributes.IMFAttributes_iface.lpVtbl = &mfbytestream_attributes_vtbl;
     object->stream = stream;
+    hres = IStream_Size(object->stream, &stream_size);
+    if (FAILED(hres))
+    {
+        free_attribute_object(&object->attributes);
+        heap_free(object);
+        return hres;
+    }
+    object->length = stream_size.QuadPart;
 
     *bytestream = &object->IMFByteStream_iface;
 
