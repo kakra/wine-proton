@@ -41,6 +41,8 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(mfplat);
 
+DEFINE_GUID(CLSID_ASFByteStreamHandler, 0x41457294, 0x644c, 0x4298, 0xa2, 0x8a, 0xbd, 0x69, 0xf2, 0xc0, 0xcf, 0x3b);
+
 static const WCHAR transform_keyW[] = {'M','e','d','i','a','F','o','u','n','d','a','t','i','o','n','\\',
                                  'T','r','a','n','s','f','o','r','m','s',0};
 static const WCHAR categories_keyW[] = {'M','e','d','i','a','F','o','u','n','d','a','t','i','o','n','\\',
@@ -2317,29 +2319,49 @@ static HRESULT WINAPI mfsourceresolver_CreateObjectFromByteStream(IMFSourceResol
     const WCHAR *url, DWORD flags, IPropertyStore *props, MF_OBJECT_TYPE *obj_type, IUnknown **object)
 {
     mfsourceresolver *This = impl_from_IMFSourceResolver(iface);
+    static const byte asf_header[] = {0x30,0x26,0xb2,0x75,0x8e,0x66,0xcf,0x11,
+                                      0xa6,0xd9,0x00,0xaa,0x00,0x62,0xce,0x6c};
+    byte buffer[16];
+    ULONG read;
 
     FIXME("(%p)->(%p, %s, %#x, %p, %p, %p): stub\n", This, stream, debugstr_w(url), flags, props, obj_type, object);
 
     if (!stream || !obj_type || !object)
         return E_POINTER;
 
-    if (flags & MF_RESOLUTION_MEDIASOURCE)
+    IMFByteStream_Read(stream, buffer, sizeof(buffer), &read);
+    if(!memcmp(buffer, asf_header, sizeof(asf_header)))
     {
-        mfsource *new_object;
+        IMFByteStreamHandler *handler;
 
-        new_object = HeapAlloc( GetProcessHeap(), 0, sizeof(*new_object) );
-        if (!new_object)
-            return E_OUTOFMEMORY;
-
-        new_object->IMFMediaSource_iface.lpVtbl = &mfsourcevtbl;
-        new_object->ref = 1;
-
-        *object = (IUnknown *)&new_object->IMFMediaSource_iface;
-        *obj_type = MF_OBJECT_MEDIASOURCE;
-        return S_OK;
+        CoInitialize(NULL);
+        CoCreateInstance(&CLSID_ASFByteStreamHandler, 0, CLSCTX_INPROC_SERVER,
+                         &IID_IMFByteStreamHandler, (void **)&handler);
+        IMFByteStreamHandler_BeginCreateObject(handler, stream, url, flags, props, NULL, NULL, NULL);
+        return IMFByteStreamHandler_EndCreateObject(handler, NULL, obj_type, object);
     }
-
-    return E_NOTIMPL;
+    else
+    {
+        FIXME("Unsupported format.\n");
+        if (flags & MF_RESOLUTION_MEDIASOURCE)
+        {
+            mfsource *new_object;
+ 
+            new_object = HeapAlloc( GetProcessHeap(), 0, sizeof(*new_object) );
+            if (!new_object)
+                return E_OUTOFMEMORY;
+ 
+            new_object->IMFMediaSource_iface.lpVtbl = &mfsourcevtbl;
+            new_object->ref = 1;
+            *object = (IUnknown *)&new_object->IMFMediaSource_iface;
+            *obj_type = MF_OBJECT_MEDIASOURCE;
+            return S_OK;
+        }
+        else
+        {
+            return E_NOTIMPL;
+        }
+    }
 }
 
 static HRESULT WINAPI mfsourceresolver_BeginCreateObjectFromURL(IMFSourceResolver *iface, const WCHAR *url,
