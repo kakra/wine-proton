@@ -42,6 +42,7 @@
 WINE_DEFAULT_DEBUG_CHANNEL(mfplat);
 
 DEFINE_GUID(CLSID_ASFByteStreamHandler, 0x41457294, 0x644c, 0x4298, 0xa2, 0x8a, 0xbd, 0x69, 0xf2, 0xc0, 0xcf, 0x3b);
+DEFINE_GUID(CLSID_MPEGByteStreamHandler, 0x271c3902, 0x6095, 0x4c45, 0xa2, 0x2f, 0x20, 0x09, 0x18, 0x16, 0xee, 0x9e);
 
 static const WCHAR transform_keyW[] = {'M','e','d','i','a','F','o','u','n','d','a','t','i','o','n','\\',
                                  'T','r','a','n','s','f','o','r','m','s',0};
@@ -2321,6 +2322,8 @@ static HRESULT WINAPI mfsourceresolver_CreateObjectFromByteStream(IMFSourceResol
     mfsourceresolver *This = impl_from_IMFSourceResolver(iface);
     static const byte asf_header[] = {0x30,0x26,0xb2,0x75,0x8e,0x66,0xcf,0x11,
                                       0xa6,0xd9,0x00,0xaa,0x00,0x62,0xce,0x6c};
+    static const byte mpeg_header[] = {0x00,0x00,0x00,0x18,0x66,0x74,0x79,0x70,
+                                       0x6D,0x70,0x34,0x32};
     byte buffer[16];
     ULONG read;
 
@@ -2336,6 +2339,16 @@ static HRESULT WINAPI mfsourceresolver_CreateObjectFromByteStream(IMFSourceResol
 
         CoInitialize(NULL);
         CoCreateInstance(&CLSID_ASFByteStreamHandler, 0, CLSCTX_INPROC_SERVER,
+                         &IID_IMFByteStreamHandler, (void **)&handler);
+        IMFByteStreamHandler_BeginCreateObject(handler, stream, url, flags, props, NULL, NULL, NULL);
+        return IMFByteStreamHandler_EndCreateObject(handler, NULL, obj_type, object);
+    }
+    else if(!memcmp(buffer, mpeg_header, sizeof(mpeg_header)))
+    {
+        IMFByteStreamHandler *handler;
+
+        CoInitialize(NULL);
+        CoCreateInstance(&CLSID_MPEGByteStreamHandler, 0, CLSCTX_INPROC_SERVER,
                          &IID_IMFByteStreamHandler, (void **)&handler);
         IMFByteStreamHandler_BeginCreateObject(handler, stream, url, flags, props, NULL, NULL, NULL);
         return IMFByteStreamHandler_EndCreateObject(handler, NULL, obj_type, object);
