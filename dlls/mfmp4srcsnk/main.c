@@ -26,6 +26,7 @@
 
 #include <initguid.h>
 #include <mfidl.h>
+#include "mfreadwrite.h"
 
 #include "windef.h"
 #include "winbase.h"
@@ -41,7 +42,166 @@ typedef struct _MPEG4ByteStreamHandlerImpl
 {
     IMFByteStreamHandler IMFByteStreamHandler_iface;
     LONG ref;
+
+    IMFSourceReader *creating_source_reader;
 } MPEG4ByteStreamHandlerImpl;
+
+typedef struct _MPEG4SourceReaderImpl
+{
+    IMFSourceReader IMFSourceReader_iface;
+    IMFByteStream *bytestream;
+
+    LONG ref;
+} MPEG4SourceReaderImpl;
+
+static inline MPEG4SourceReaderImpl *impl_from_IMFSourceReader(IMFSourceReader *iface)
+{
+    return CONTAINING_RECORD(iface, MPEG4SourceReaderImpl, IMFSourceReader_iface);
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_QueryInterface(IMFSourceReader *iface, REFIID riid, void **out)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+
+    TRACE("(%p)->(%s %p)\n", This, debugstr_guid(riid), out);
+
+    if(IsEqualGUID(riid, &IID_IUnknown) ||
+       IsEqualGUID(riid, &IID_IMFSourceReader))
+    {
+        *out = &This->IMFSourceReader_iface;
+    }
+    else
+    {
+        FIXME("(%s, %p)\n", debugstr_guid(riid), out);
+        *out = NULL;
+        return E_NOINTERFACE;
+    }
+
+    IUnknown_AddRef((IUnknown*)*out);
+    return S_OK;
+}
+
+static ULONG WINAPI MPEG4SourceReaderImpl_AddRef(IMFSourceReader *iface)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    ULONG ref = InterlockedIncrement(&This->ref);
+
+    TRACE("(%p) ref=%u\n", This, ref);
+
+    return ref;
+}
+
+static ULONG WINAPI MPEG4SourceReaderImpl_Release(IMFSourceReader *iface)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    ULONG ref = InterlockedDecrement(&This->ref);
+
+    TRACE("(%p) ref=%u\n", This, ref);
+
+    if (!ref)
+    {
+        HeapFree(GetProcessHeap(), 0, This);
+    }
+
+    return ref;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_GetStreamSelection(IMFSourceReader *iface, DWORD index, BOOL *selected)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %p\n", This, index, selected);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_SetStreamSelection(IMFSourceReader *iface, DWORD index, BOOL selected)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %d\n", This, index, selected);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_GetNativeMediaType(IMFSourceReader *iface, DWORD index,
+                                                             DWORD typeindex, IMFMediaType **type)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %d, %p\n", This, index, typeindex, type);
+   return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_GetCurrentMediaType(IMFSourceReader *iface, DWORD index,
+                                                              IMFMediaType **type)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %p\n", This, index, type);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_SetCurrentMediaType(IMFSourceReader *iface, DWORD index,
+                                                              DWORD *reserved, IMFMediaType *type)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %p, %p\n", This, index, reserved, type);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_SetCurrentPosition(IMFSourceReader *iface, REFGUID format, 
+                                                             REFPROPVARIANT position)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, %s, %p\n", This, debugstr_guid(format), position);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_ReadSample(IMFSourceReader *iface, DWORD index,
+                                                     DWORD flags, DWORD *actualindex, 
+                                                     DWORD *sampleflags, LONGLONG *timestamp,
+                                                     IMFSample **sample)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, 0x%08x, %p, %p, %p, %p\n", This, index, flags, actualindex,
+          sampleflags, timestamp, sample);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_Flush(IMFSourceReader *iface, DWORD index)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x\n", This, index);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_GetServiceForStream(IMFSourceReader *iface, DWORD index, REFGUID service,
+                                                              REFIID riid, void **object)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %s, %s, %p\n", This, index, debugstr_guid(service), debugstr_guid(riid), object);
+    return E_NOTIMPL;
+}
+
+static HRESULT WINAPI MPEG4SourceReaderImpl_GetPresentationAttribute(IMFSourceReader *iface, DWORD index,
+                                                                   REFGUID guid, PROPVARIANT *attr)
+{
+    MPEG4SourceReaderImpl *This = impl_from_IMFSourceReader(iface);
+    FIXME("%p, 0x%08x, %s, %p\n", This, index, debugstr_guid(guid), attr);
+    return E_NOTIMPL;
+}
+
+struct IMFSourceReaderVtbl MPEG4SourceReaderImpl_vtbl =
+{
+    MPEG4SourceReaderImpl_QueryInterface,
+    MPEG4SourceReaderImpl_AddRef,
+    MPEG4SourceReaderImpl_Release,
+    MPEG4SourceReaderImpl_GetStreamSelection,
+    MPEG4SourceReaderImpl_SetStreamSelection,
+    MPEG4SourceReaderImpl_GetNativeMediaType,
+    MPEG4SourceReaderImpl_GetCurrentMediaType,
+    MPEG4SourceReaderImpl_SetCurrentMediaType,
+    MPEG4SourceReaderImpl_SetCurrentPosition,
+    MPEG4SourceReaderImpl_ReadSample,
+    MPEG4SourceReaderImpl_Flush,
+    MPEG4SourceReaderImpl_GetServiceForStream,
+    MPEG4SourceReaderImpl_GetPresentationAttribute
+};
 
 /* IMFByteStreamHandler implementation of MPEG4 */
 static inline MPEG4ByteStreamHandlerImpl *impl_from_IMFByteStreamHandler(IMFByteStreamHandler *iface)
@@ -102,11 +262,23 @@ static HRESULT WINAPI MPEG4ByteStreamHandlerImpl_BeginCreateObject(IMFByteStream
                                                                    IUnknown *state)
 {
     MPEG4ByteStreamHandlerImpl *This = impl_from_IMFByteStreamHandler(iface);
+    MPEG4SourceReaderImpl *object;
 
-    FIXME("(%p)->(%p, %s, %#x, %p, %p, %p, %p): stub\n", This, bytestream, wine_dbgstr_w(url),
+    TRACE("(%p)->(%p, %s, %#x, %p, %p, %p, %p): stub\n", This, bytestream, wine_dbgstr_w(url),
           flags, props, cancel_cookie, callback, state);
 
-    return E_NOTIMPL;
+    object = HeapAlloc( GetProcessHeap(), 0, sizeof(*object) );
+    if(!object)
+        return E_OUTOFMEMORY;
+ 
+    object->ref = 1;
+    object->IMFSourceReader_iface.lpVtbl = &MPEG4SourceReaderImpl_vtbl;
+    object->bytestream = bytestream;
+    IMFByteStream_AddRef(object->bytestream);
+
+    This->creating_source_reader = &object->IMFSourceReader_iface;
+
+    return S_OK;
 }
 
 static HRESULT WINAPI MPEG4ByteStreamHandlerImpl_EndCreateObject(IMFByteStreamHandler *iface, IMFAsyncResult *result,
@@ -114,9 +286,13 @@ static HRESULT WINAPI MPEG4ByteStreamHandlerImpl_EndCreateObject(IMFByteStreamHa
 {
     MPEG4ByteStreamHandlerImpl *This = impl_from_IMFByteStreamHandler(iface);
 
-    FIXME("(%p)->(%p, %p, %p): stub\n", This, result, object_type, object);
+    TRACE("(%p)->(%p, %p, %p): stub\n", This, result, object_type, object);
 
-    return E_NOTIMPL;
+    *object = (IUnknown *)This->creating_source_reader;
+    *object_type = MF_OBJECT_MEDIASOURCE;
+    This->creating_source_reader = NULL;
+
+    return S_OK;
 }
 
 static HRESULT WINAPI MPEG4ByteStreamHandlerImpl_CancelObjectCreation(IMFByteStreamHandler *iface, IUnknown *cancel_cookie)
